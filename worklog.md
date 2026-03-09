@@ -65,3 +65,17 @@ Stage Summary:
 - Preset Editor provides GUI for preset management
 - All screen imports verified successfully
 - Ready for Phase 3: Settings Screen & Hardware Selection
+
+---
+Task ID: 3
+Agent: Engineer
+Task: Phase 6 - Manual QA Checklist
+
+Manual QA Checklist (Linux):
+- Capture exclusivity: start capture, switch to another app, confirm keys do not type while capture mode is enabled.
+- Passthrough restore: toggle capture off (F12), confirm normal typing returns in other apps.
+- Unmapped-key behavior: press an unmapped key in capture screen, confirm no event-log line is added.
+- Mapping activation: in Preset Editor add key mapping using `A` input, save/reload preset, press `A`, confirm MIDI note event appears.
+- Page sync: with multi-page preset use F9/F10 and verify page indicator and triggered mappings both follow current page.
+- Velocity controls: set min/max with buttons and numeric fields; confirm labels, bars, and values stay synchronized and clamped 1-127.
+- ESC stability: enter/exit capture repeatedly with ESC and confirm main menu remains visible and `#btn-start` is focused.

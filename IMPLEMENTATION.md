@@ -81,11 +81,13 @@
   - **Note:** Added `MainMenuScreen.on_show()` to refocus `#btn-start` whenever returning to the main menu.
 
 ### Phase 6: Regression Coverage
-- [ ] **Step 6.1:** Add tests for capture toggle/grab sync, page sync, and velocity clamp under `tests/`.
+- [x] **Step 6.1:** Add tests for capture toggle/grab sync, page sync, and velocity clamp under `tests/`.
   - **Verify:** `pytest tests/ -v` passes.
+  - **Note:** Added `tests/test_phase6_regression.py` with coverage for `set_capture_mode` sync behavior, toggle capture flow, capture page/state-manager sync, velocity clamping, and preset-editor key normalization. Verified with `pytest tests -v` (5 passed).
 
-- [ ] **Step 6.2:** Add manual QA checklist in `worklog.md` or `docs/` for exclusivity, unmapped-key behavior, mapping activation, velocity controls, and ESC stability.
+- [x] **Step 6.2:** Add manual QA checklist in `worklog.md` or `docs/` for exclusivity, unmapped-key behavior, mapping activation, velocity controls, and ESC stability.
   - **Verify:** Checklist can be executed end-to-end on Linux.
+  - **Note:** Added a Linux-focused manual QA checklist under `Task ID: 3` in `worklog.md` covering exclusivity, passthrough restore, unmapped key logging, mapping activation, page sync, velocity controls, and ESC return stability.
 
 ---
 
