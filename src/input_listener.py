@@ -127,17 +127,29 @@ class InputListener:
 
     def _grab_device(self) -> None:
         """Grab the device to capture all input events exclusively."""
-        if self._device and not self._is_grabbed:
+        if not self._device or self._is_grabbed:
+            return
+
+        try:
             self._device.grab()
             self._is_grabbed = True
             logger.debug("Device grabbed - capturing input exclusively")
+        except OSError as error:
+            self._is_grabbed = False
+            logger.error("Failed to grab input device: %s", error)
 
     def _ungrab_device(self) -> None:
         """Ungrab the device to allow passthrough to OS."""
-        if self._device and self._is_grabbed:
+        if not self._device or not self._is_grabbed:
+            return
+
+        try:
             self._device.ungrab()
-            self._is_grabbed = False
             logger.debug("Device ungrabbed - passthrough mode")
+        except OSError as error:
+            logger.error("Failed to ungrab input device: %s", error)
+        finally:
+            self._is_grabbed = False
 
     def _update_grab_state(self) -> None:
         """Update device grab state based on state_manager.is_captured."""

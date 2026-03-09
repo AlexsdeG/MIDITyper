@@ -35,6 +35,8 @@ class StateManager:
         current_page_index: Current page index (0-based, replaces octave shift)
         active_preset: Currently active preset configuration
         current_velocity: Current note velocity (0-127)
+        min_velocity: Minimum velocity (1-127), auto-clamped
+        max_velocity: Maximum velocity (1-127), auto-clamped
     """
     
     # Core state
@@ -46,7 +48,7 @@ class StateManager:
     current_velocity: int = 100
     velocity_step: int = 10
     
-    # Limits
+    # Limits - will be clamped to 1-127 in __setattr__
     min_velocity: int = 1
     max_velocity: int = 127
     
@@ -57,6 +59,17 @@ class StateManager:
         """Initialize after dataclass creation."""
         # Track active notes for cleanup
         self._active_notes: Dict[int, int] = {}  # note -> channel
+        
+        # Clamp velocity limits to valid MIDI range (1-127)
+        self.min_velocity = max(1, min(127, self.min_velocity))
+        self.max_velocity = max(1, min(127, self.max_velocity))
+    
+    def __setattr__(self, name: str, value):
+        """Override setattr to clamp velocity values to MIDI range."""
+        if name in ('min_velocity', 'max_velocity') and not name.startswith('_'):
+            # Clamp velocity to valid MIDI range (1-127)
+            value = max(1, min(127, int(value)))
+        object.__setattr__(self, name, value)
 
     @property
     def capture_state(self) -> CaptureState:

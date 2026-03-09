@@ -12,6 +12,7 @@ the active preset configuration. Modules include:
 - velocity_sliders: Min/Max velocity controls with randomization
 """
 
+import logging
 from typing import List, Optional
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical, ScrollableContainer
@@ -22,6 +23,9 @@ from textual.binding import Binding
 from textual.message import Message
 from rich.text import Text
 from rich.table import Table
+
+
+logger = logging.getLogger(__name__)
 
 
 class EventLogWidget(RichLog):
@@ -252,7 +256,7 @@ class PageIndicator(Static):
 
 class VelocitySliderSection(Static):
     """
-    Widget containing min/max velocity inputs for randomized velocity.
+    Widget containing min/max velocity controls with sliders and numeric inputs.
     
     When min != max, each note will have a random velocity between min and max.
     When min == max, all notes use that fixed velocity.
@@ -275,17 +279,30 @@ class VelocitySliderSection(Static):
     VelocitySliderSection .slider-label {
         color: $text;
         margin-bottom: 0;
-        width: auto;
+        width: 15;
     }
     
     VelocitySliderSection .slider-value {
         color: $accent;
-        text-align: right;
+        text-align: center;
         width: 4;
     }
     
-    VelocitySliderSection Input {
+    VelocitySliderSection .slider-bar {
+        height: 1;
+        content-align: left middle;
+        background: $surface;
+        border: tall $border;
         width: 1fr;
+    }
+    
+    VelocitySliderSection Button {
+        min-width: 3;
+        margin: 0 1;
+    }
+    
+    VelocitySliderSection Input {
+        width: 8;
     }
     """
     
@@ -298,51 +315,88 @@ class VelocitySliderSection(Static):
         self.max_velocity = max_vel
     
     def compose(self) -> ComposeResult:
-        """Create the velocity input layout."""
+        """Create the velocity control layout with sliders and inputs."""
+        # Min Velocity Row
         with Vertical(classes="slider-row"):
             with Horizontal():
                 yield Label("Min Velocity:", classes="slider-label")
                 yield Label(str(self.min_velocity), id="min-velocity-value", classes="slider-value")
-            yield Input(str(self.min_velocity), id="min-velocity-slider", type="integer")
+            with Horizontal():
+                yield Button("-", id="min-velocity-dec", variant="default")
+                yield Static(self._render_slider_bar(self.min_velocity), id="min-velocity-bar", classes="slider-bar")
+                yield Button("+", id="min-velocity-inc", variant="default")
+            yield Input(str(self.min_velocity), id="min-velocity-input", type="integer", placeholder="1-127")
 
+        # Max Velocity Row
         with Vertical(classes="slider-row"):
             with Horizontal():
                 yield Label("Max Velocity:", classes="slider-label")
                 yield Label(str(self.max_velocity), id="max-velocity-value", classes="slider-value")
-            yield Input(str(self.max_velocity), id="max-velocity-slider", type="integer")
+            with Horizontal():
+                yield Button("-", id="max-velocity-dec", variant="default")
+                yield Static(self._render_slider_bar(self.max_velocity), id="max-velocity-bar", classes="slider-bar")
+                yield Button("+", id="max-velocity-inc", variant="default")
+            yield Input(str(self.max_velocity), id="max-velocity-input", type="integer", placeholder="1-127")
+    
+    def _render_slider_bar(self, value: int) -> str:
+        """Render a visual slider bar showing the velocity value."""
+        # Create a 20-character bar representing 1-127 range
+        bar_width = 20
+        filled = int((value - 1) / 126 * bar_width)
+        return "█" * filled + "░" * (bar_width - filled)
     
     def on_mount(self) -> None:
         """Initialize the display."""
-        self._update_inputs()
+        self._update_display()
     
-    def _update_inputs(self) -> None:
-        """Update the input fields and value labels."""
+    def _update_display(self) -> None:
+        """Update all display elements (input, label, slider bar)."""
         try:
-            min_input = self.query_one("#min-velocity-slider", Input)
-            min_input.value = str(self.min_velocity)
+            # Update min velocity displays
             self.query_one("#min-velocity-value", Label).update(str(self.min_velocity))
+            self.query_one("#min-velocity-bar", Static).update(self._render_slider_bar(self.min_velocity))
+            min_input = self.query_one("#min-velocity-input", Input)
+            if min_input.value != str(self.min_velocity):
+                min_input.value = str(self.min_velocity)
 
-            max_input = self.query_one("#max-velocity-slider", Input)
-            max_input.value = str(self.max_velocity)
+            # Update max velocity displays
             self.query_one("#max-velocity-value", Label).update(str(self.max_velocity))
+            self.query_one("#max-velocity-bar", Static).update(self._render_slider_bar(self.max_velocity))
+            max_input = self.query_one("#max-velocity-input", Input)
+            if max_input.value != str(self.max_velocity):
+                max_input.value = str(self.max_velocity)
         except Exception:
             pass
     
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle slider button presses."""
+        button_id = event.button.id
+        
+        if button_id == "min-velocity-dec":
+            self.min_velocity = max(1, self.min_velocity - 1)
+        elif button_id == "min-velocity-inc":
+            self.min_velocity = min(127, self.min_velocity + 1)
+        elif button_id == "max-velocity-dec":
+            self.max_velocity = max(1, self.max_velocity - 1)
+        elif button_id == "max-velocity-inc":
+            self.max_velocity = min(127, self.max_velocity + 1)
+        
+        self._update_display()
+        self.post_message(VelocityChanged(self.min_velocity, self.max_velocity))
+    
     def on_input_changed(self, event: Input.Changed) -> None:
-        """Handle input value changes."""
+        """Handle direct input value changes."""
         try:
             value = int(event.input.value) if event.input.value else 1
             # Clamp value to valid MIDI range (1-127)
             value = max(1, min(127, value))
             
-            if event.input.id == "min-velocity-slider":
+            if event.input.id == "min-velocity-input":
                 self.min_velocity = value
-                event.input.value = str(value)
-            elif event.input.id == "max-velocity-slider":
+            elif event.input.id == "max-velocity-input":
                 self.max_velocity = value
-                event.input.value = str(value)
 
-            self._update_inputs()
+            self._update_display()
             self.post_message(VelocityChanged(self.min_velocity, self.max_velocity))
         except (ValueError, AttributeError):
             # Ignore non-numeric input
@@ -574,6 +628,8 @@ class CaptureScreen(Screen):
     
     def on_mount(self) -> None:
         """Initialize the screen on mount - load preset and update UI."""
+        logger.info("CaptureScreen mounted")
+
         if hasattr(self.app, "state_manager") and self.app.state_manager:
             self.status = "CAPTURING" if self.app.state_manager.is_captured else "PASSTHROUGH"
 
@@ -587,15 +643,18 @@ class CaptureScreen(Screen):
         except Exception:
             pass
 
-        event_log = self.query_one("#event-log", EventLogWidget)
-        event_log.write("[bold cyan]MIDITyper Capture Started[/bold cyan]")
-        event_log.write("[dim]Press F12 to toggle capture mode[/dim]")
+        event_log = self._get_event_log()
+        if event_log:
+            event_log.write("[bold cyan]MIDITyper Capture Started[/bold cyan]")
+            event_log.write("[dim]Press F12 to toggle capture mode[/dim]")
 
         self.set_interval(0.1, self._sync_active_notes)
         self._update_footer()
     
     def _load_preset_async(self) -> None:
         """Load the active preset and update UI reactively."""
+        logger.debug("CaptureScreen loading active preset")
+
         # Try to get preset from app first (may already be loaded)
         preset = getattr(self.app, 'preset', None)
         
@@ -606,9 +665,11 @@ class CaptureScreen(Screen):
                     preset_name = self.app.config.settings.last_used_preset
                     preset = self.app.config.load_preset(preset_name)
                     self.app.preset = preset  # Cache for future use
+                    logger.info("Loaded preset '%s' for capture", preset_name)
                 except Exception as e:
                     # Fallback to default preset
                     self.preset_name = "Error loading preset"
+                    logger.exception("Failed to load preset for capture: %s", e)
                     return
         
         if preset:
@@ -653,7 +714,7 @@ class CaptureScreen(Screen):
             velocity_section = self.query_one("#velocity-section", VelocitySliderSection)
             velocity_section.min_velocity = self.min_velocity
             velocity_section.max_velocity = self.max_velocity
-            velocity_section._update_inputs()
+            velocity_section._update_display()
         except Exception:
             pass
         
@@ -752,8 +813,9 @@ class CaptureScreen(Screen):
         if hasattr(self.app, "load_preset") and self.app.load_preset(event.value):
             self.current_page = 0
             self._load_preset_async()
-            event_log = self.query_one("#event-log", EventLogWidget)
-            event_log.write(f"[green]Loaded preset: {event.value}[/green]")
+            event_log = self._get_event_log()
+            if event_log:
+                event_log.write(f"[green]Loaded preset: {event.value}[/green]")
 
     def on_velocity_changed(self, event) -> None:
         """Handle VelocityChanged message from the velocity slider section."""
@@ -787,10 +849,12 @@ class CaptureScreen(Screen):
     
     async def action_back(self) -> None:
         """Return to main menu and force capture off."""
+        logger.info("CaptureScreen back action triggered")
         await self._cleanup_and_exit()
 
     def action_toggle(self) -> None:
         """Toggle capture mode and synchronize input listener grab state."""
+        logger.debug("CaptureScreen toggle requested from UI")
         if hasattr(self.app, "toggle_capture_mode"):
             captured = self.app.toggle_capture_mode()
             self.status = "CAPTURING" if captured else "PASSTHROUGH"
@@ -810,29 +874,33 @@ class CaptureScreen(Screen):
         except Exception:
             pass
 
-        event_log = self.query_one("#event-log", EventLogWidget)
-        event_log.write(f"[yellow]Mode: {self.status}[/yellow]")
+        event_log = self._get_event_log()
+        if event_log:
+            event_log.write(f"[yellow]Mode: {self.status}[/yellow]")
     
     def action_page_up(self) -> None:
         """Go to next page."""
         if self.current_page < self.total_pages - 1:
             self.current_page += 1
             self._update_page_display()
-            event_log = self.query_one("#event-log", EventLogWidget)
-            event_log.write(f"[cyan]Page: {self.page_name}[/cyan]")
+            event_log = self._get_event_log()
+            if event_log:
+                event_log.write(f"[cyan]Page: {self.page_name}[/cyan]")
     
     def action_page_down(self) -> None:
         """Go to previous page."""
         if self.current_page > 0:
             self.current_page -= 1
             self._update_page_display()
-            event_log = self.query_one("#event-log", EventLogWidget)
-            event_log.write(f"[cyan]Page: {self.page_name}[/cyan]")
+            event_log = self._get_event_log()
+            if event_log:
+                event_log.write(f"[cyan]Page: {self.page_name}[/cyan]")
     
     def action_panic(self) -> None:
         """Send panic (all notes off)."""
-        event_log = self.query_one("#event-log", EventLogWidget)
-        event_log.write("[red]⚠ PANIC - All notes off[/red]")
+        event_log = self._get_event_log()
+        if event_log:
+            event_log.write("[red]⚠ PANIC - All notes off[/red]")
         
         # Clear visualizer states
         try:
@@ -859,12 +927,15 @@ class CaptureScreen(Screen):
 
     async def _cleanup_and_exit(self) -> None:
         """Clean up and return to main menu with capture disabled."""
+        logger.info("CaptureScreen cleanup started")
+
         if hasattr(self.app, 'midi_engine') and self.app.midi_engine:
             self.app.midi_engine.panic()
 
         if hasattr(self.app, 'stop_capture'):
             await self.app.stop_capture()
 
+        logger.info("CaptureScreen cleanup complete, popping screen")
         self.app.pop_screen()
     
     def add_key_event(self, key_name: str, is_pressed: bool, note: str = "") -> None:
@@ -876,7 +947,10 @@ class CaptureScreen(Screen):
             is_pressed: True for key down, False for key up
             note: Optional note name for MIDI events
         """
-        event_log = self.query_one("#event-log", EventLogWidget)
+        event_log = self._get_event_log()
+        if event_log is None:
+            return
+
         action = "▼" if is_pressed else "▲"
         color = "green" if is_pressed else "red"
         
@@ -891,6 +965,13 @@ class CaptureScreen(Screen):
             drum_viz.set_active_pad(key_name, is_pressed)
         except Exception:
             pass
+
+    def _get_event_log(self) -> Optional[EventLogWidget]:
+        """Return event log widget when present in current module layout."""
+        try:
+            return self.query_one("#event-log", EventLogWidget)
+        except Exception:
+            return None
         
         try:
             piano_viz = self.query_one("#piano-viz", PianoKeyboardVisualizer)
@@ -942,7 +1023,7 @@ class CaptureScreen(Screen):
             velocity_section = self.query_one("#velocity-section", VelocitySliderSection)
             velocity_section.min_velocity = min_vel
             velocity_section.max_velocity = max_vel
-            velocity_section._update_inputs()
+            velocity_section._update_display()
         except Exception:
             pass
     

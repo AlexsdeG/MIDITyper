@@ -7,17 +7,16 @@
   ],
   "pages": [
     {
-      "name": "Page 1",
+      "name": "Page 12",
       "mappings": {
-        "KEY_A": {
-          "type": "note",
-          "note": 60,
-          "name": "C4"
-        },
         "KEY_S": {
           "type": "note",
           "note": 62,
           "name": "D4"
+        },
+        "KEY_E": {
+          "type": "action",
+          "action": "TOGGLE_CAPTURE"
         }
       }
     },
@@ -35,5 +34,6 @@
       "type": "action",
       "action": "PANIC"
     }
-  }
+  },
+  "global_mappings": {}
 }

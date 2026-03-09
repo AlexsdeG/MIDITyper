@@ -128,6 +128,7 @@ class KeyboardMidiApp(App):
             True if initialization successful, False otherwise
         """
         settings = self.config.settings
+        logger.info("Initializing capture resources")
 
         # Load last used preset
         self.preset = self.config.get_last_preset()
@@ -140,7 +141,12 @@ class KeyboardMidiApp(App):
 
         # Reuse existing running listener/resources if already initialized
         if self.input_listener and self.input_listener.is_running and self.state_manager and self.midi_engine:
+            logger.info("Capture resources already running; reusing existing instances")
             self.set_capture_mode(settings.start_captured)
+            # Update velocity range from settings
+            self.state_manager.min_velocity = settings.min_velocity
+            self.state_manager.max_velocity = settings.max_velocity
+            self.midi_engine.set_velocity_range(settings.min_velocity, settings.max_velocity)
             if self.preset:
                 self.state_manager.set_active_preset(self.preset)
             return True
@@ -223,6 +229,7 @@ class KeyboardMidiApp(App):
     
     async def start_capture(self) -> None:
         """Start the input capture."""
+        logger.info("Starting capture listener")
         if self.input_listener:
             await self.input_listener.start()
             logger.info("Input capture started")
@@ -230,6 +237,7 @@ class KeyboardMidiApp(App):
 
     async def stop_capture(self) -> None:
         """Stop the input capture and force passthrough state."""
+        logger.info("Stopping capture listener")
         self.set_capture_mode(False)
         if self.input_listener:
             await self.input_listener.stop()
@@ -237,10 +245,12 @@ class KeyboardMidiApp(App):
 
     def set_capture_mode(self, captured: bool) -> bool:
         """Set capture mode and synchronize keyboard grab state."""
+        logger.debug("Setting capture mode to %s", captured)
         if self.state_manager:
             self.state_manager.set_capture(captured)
-        if self.input_listener and self.input_listener.is_running:
+        if self.input_listener:
             self.input_listener.sync_grab_state()
+            logger.debug("Synchronized listener grab state after mode change")
         return self.state_manager.is_captured if self.state_manager else captured
 
     def toggle_capture_mode(self) -> bool:
@@ -258,22 +268,42 @@ class KeyboardMidiApp(App):
         """
         screen = self.screen
         if isinstance(screen, CaptureScreen):
+            mapping_found = False
             note_name = ""
+
             if self.state_manager and self.preset:
                 page_index = getattr(self.state_manager, "current_page_index", 0)
                 page = self.preset.get_page(page_index)
-                if page and key_name in page.mappings:
-                    note_name = page.mappings[key_name].name
 
-            screen.add_key_event(key_name, is_pressed, note_name)
+                if page and key_name in page.mappings:
+                    mapping_found = True
+                    note_name = page.mappings[key_name].name
+                elif key_name in self.preset.global_actions:
+                    mapping_found = True
+                elif key_name in self.preset.global_mappings:
+                    mapping_found = True
+                    mapping = self.preset.global_mappings[key_name]
+                    note_name = mapping.get("name", "") if mapping.get("type") == "note" else ""
+                elif self.config and key_name in self.config.settings.app_global_mappings:
+                    mapping_found = True
+                    mapping = self.config.settings.app_global_mappings[key_name]
+                    note_name = mapping.get("name", "") if mapping.get("type") == "note" else ""
+
+            if mapping_found:
+                screen.add_key_event(key_name, is_pressed, note_name)
 
             if self.state_manager and self.preset:
                 active_notes = self.state_manager.get_active_notes()
-                page = self.preset.get_page(getattr(self.state_manager, "current_page_index", 0))
+                page = self.preset.get_page(
+                    getattr(self.state_manager, "current_page_index", 0)
+                )
                 note_names = []
                 if page:
                     for note in active_notes.keys():
-                        match = next((m.name for m in page.mappings.values() if m.note == note), None)
+                        match = next(
+                            (m.name for m in page.mappings.values() if m.note == note),
+                            None,
+                        )
                         note_names.append(match or str(note))
                 screen.update_active_notes(len(active_notes), note_names)
     
