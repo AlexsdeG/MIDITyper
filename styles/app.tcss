@@ -1,0 +1,503 @@
+/* MIDITyper Application Styles */
+
+/* =============================================================================
+   Global App Styles
+   ============================================================================= */
+
+App {
+    background: $surface;
+}
+
+*:focus {
+    text-style: bold;
+}
+
+Button:focus {
+    text-style: bold;
+}
+
+Notification {
+    padding: 1 2;
+}
+
+/* =============================================================================
+   Settings Screen Styles
+   ============================================================================= */
+
+SettingsScreen {
+    layout: vertical;
+}
+
+SettingsScreen #title {
+    text-style: bold;
+    color: $primary;
+    text-align: center;
+    margin: 1 0 1 0;
+}
+
+SettingsScreen TabbedContent {
+    height: 1fr;
+    background: $surface;
+    border: solid $primary;
+}
+
+SettingsScreen TabPane {
+    padding: 0;
+    height: 1fr;
+    overflow: auto;
+    scrollbar-gutter: stable;
+}
+
+SettingsScreen #settings-container {
+    width: 100%;
+    height: auto;
+    padding: 2;
+}
+
+SettingsScreen #keybinds-container {
+    width: 100%;
+    height: auto;
+    padding: 2;
+}
+
+SettingsScreen .setting-row {
+    height: auto;
+    min-height: 3;
+    margin-bottom: 1;
+    padding: 1;
+    background: $panel;
+}
+
+SettingsScreen .setting-label {
+    color: $text;
+    margin-bottom: 1;
+    height: auto;
+}
+
+SettingsScreen .setting-widget {
+    margin-top: 0;
+    height: auto;
+}
+
+SettingsScreen #device-info {
+    color: $text-muted;
+    text-align: center;
+    margin-top: 1;
+    height: auto;
+}
+
+/* App-Global Keybinds Section */
+SettingsScreen #global-keybinds-section {
+    padding: 1;
+    background: $surface;
+    border: solid $border;
+    height: auto;
+}
+
+SettingsScreen #global-keybinds-title {
+    text-style: bold;
+    color: $primary;
+    margin-bottom: 1;
+}
+
+SettingsScreen #global-keybinds-table {
+    height: auto;
+    min-height: 10;
+    max-height: 30;
+    margin-bottom: 1;
+}
+
+SettingsScreen #global-keybinds-buttons {
+    height: auto;
+    align: center middle;
+}
+
+SettingsScreen #global-keybinds-buttons Button {
+    margin: 0 1;
+}
+
+/* =============================================================================
+   Preset Editor Styles
+   ============================================================================= */
+
+PresetEditorScreen {
+    layout: vertical;
+}
+
+PresetEditorScreen #editor-container {
+    height: 1fr;
+    padding: 1;
+}
+
+PresetEditorScreen #preset-select-row {
+    height: auto;
+    margin-bottom: 1;
+    padding: 1;
+    background: $panel;
+}
+
+PresetEditorScreen #tab-content {
+    height: 1fr;
+}
+
+PresetEditorScreen .setting-row {
+    height: auto;
+    margin-bottom: 1;
+    padding: 1;
+}
+
+PresetEditorScreen .setting-label {
+    color: $text;
+    margin-bottom: 0;
+    height: auto;
+}
+
+/* Preset Editor Toolbar - Reduced Height */
+PresetEditorScreen #preset-select-row Label {
+    width: auto;
+    margin-right: 1;
+}
+
+PresetEditorScreen #preset-select-row Select {
+    width: 20;
+}
+
+/* Page Editor Styles */
+PresetEditorScreen #page-editor-container {
+    height: 1fr;
+    layout: horizontal;
+}
+
+PresetEditorScreen #page-list-panel {
+    width: 1fr;
+    padding: 1;
+}
+
+PresetEditorScreen #mapping-panel {
+    width: 2fr;
+    padding: 1;
+}
+
+PresetEditorScreen #page-list {
+    height: 1fr;
+}
+
+PresetEditorScreen #mapping-table {
+    height: 1fr;
+}
+
+PresetEditorScreen #mapping-buttons {
+    margin-top: 1;
+    height: auto;
+}
+
+PresetEditorScreen #mapping-buttons Button {
+    margin-right: 1;
+}
+
+PresetEditorScreen #mapping-info {
+    color: $text-muted;
+    text-align: center;
+    margin-top: 1;
+}
+
+/* Global Actions Section */
+PresetEditorScreen #global-actions-section {
+    margin-top: 1;
+    padding: 1;
+    background: $surface;
+}
+
+PresetEditorScreen #global-actions-table {
+    height: auto;
+    max-height: 10;
+}
+
+/* =============================================================================
+   Capture Screen Styles
+   ============================================================================= */
+
+CaptureScreen {
+    layout: vertical;
+}
+
+/* Top Toolbar - Step 5.4 & 5.5 */
+CaptureScreen #top-toolbar {
+    dock: top;
+    height: 3;
+    padding: 0 2;
+    align: center middle;
+    background: $surface;
+}
+
+CaptureScreen #top-toolbar Button {
+    margin: 0 2;
+    min-width: 15;
+}
+
+CaptureScreen #btn-capture {
+    background: $success;
+    color: white;
+}
+
+CaptureScreen #btn-capture:hover {
+    background: $success-lighten-1;
+}
+
+CaptureScreen #btn-capture.capturing {
+    background: $warning;
+    color: black;
+}
+
+CaptureScreen #btn-kill {
+    background: $error;
+    color: white;
+}
+
+CaptureScreen #btn-kill:hover {
+    background: $error-lighten-1;
+}
+
+CaptureScreen #status-indicator {
+    text-style: bold;
+    margin-right: 2;
+}
+
+CaptureScreen .status-capturing {
+    color: $success;
+}
+
+CaptureScreen .status-passthrough {
+    color: $warning;
+}
+
+CaptureScreen #main-container {
+    layout: horizontal;
+    height: 1fr;
+}
+
+CaptureScreen #left-panel {
+    width: 1fr;
+    padding: 1;
+}
+
+CaptureScreen #right-panel {
+    width: 1fr;
+    padding: 1;
+}
+
+CaptureScreen .module-container {
+    margin-bottom: 1;
+}
+
+CaptureScreen .info-panel {
+    background: $panel;
+    border: solid $border;
+    padding: 1;
+    margin-bottom: 1;
+}
+
+/* Velocity Slider Styles - Step 5.2 */
+CaptureScreen #velocity-section {
+    padding: 1;
+    background: $panel;
+    border: solid $border;
+    margin-bottom: 1;
+}
+
+CaptureScreen #velocity-section Label {
+    margin-bottom: 1;
+}
+
+CaptureScreen .slider-row {
+    margin-bottom: 1;
+    height: auto;
+}
+
+CaptureScreen .slider-label {
+    color: $text;
+    margin-bottom: 0;
+}
+
+CaptureScreen .slider-value {
+    color: $accent;
+    text-align: right;
+}
+
+CaptureScreen .velocity-slider {
+    margin-bottom: 1;
+}
+
+CaptureScreen .velocity-value {
+    color: $text-muted;
+    text-align: right;
+}
+
+/* =============================================================================
+   Main Menu Styles
+   ============================================================================= */
+
+MainMenuScreen {
+    align: center middle;
+}
+
+MainMenuScreen #menu-container {
+    width: 40;
+    height: auto;
+    padding: 2;
+    border: solid $primary;
+}
+
+MainMenuScreen #title {
+    text-style: bold;
+    color: $primary;
+    text-align: center;
+    margin-bottom: 2;
+}
+
+MainMenuScreen #subtitle {
+    color: $text-muted;
+    text-align: center;
+    margin-bottom: 2;
+}
+
+MainMenuScreen .menu-button {
+    width: 100%;
+    margin-bottom: 1;
+}
+
+/* =============================================================================
+   Event Log Widget
+   ============================================================================= */
+
+EventLogWidget {
+    height: 1fr;
+    border: solid $border;
+    background: $panel;
+}
+
+/* =============================================================================
+   Active Notes Panel
+   ============================================================================= */
+
+ActiveNotesPanel {
+    height: auto;
+    min-height: 3;
+    padding: 1;
+    border: solid $border;
+    background: $panel;
+}
+
+/* =============================================================================
+   Shortcut Guide
+   ============================================================================= */
+
+ShortcutGuide {
+    height: auto;
+    padding: 1;
+    border: solid $border;
+    background: $panel;
+}
+
+/* =============================================================================
+   Drum Pad Visualizer
+   ============================================================================= */
+
+DrumPadVisualizer {
+    height: auto;
+    min-height: 8;
+    padding: 1;
+    border: solid $border;
+    background: $panel;
+}
+
+.pad-active {
+    background: $success;
+    color: white;
+}
+
+.pad-inactive {
+    background: $surface;
+}
+
+/* =============================================================================
+   Piano Keyboard Visualizer
+   ============================================================================= */
+
+PianoKeyboardVisualizer {
+    height: auto;
+    min-height: 5;
+    padding: 1;
+    border: solid $border;
+    background: $panel;
+}
+
+/* =============================================================================
+   Page Indicator
+   ============================================================================= */
+
+PageIndicator {
+    height: auto;
+    padding: 1;
+    border: solid $primary;
+    background: $panel;
+}
+
+/* =============================================================================
+   Velocity Meter
+   ============================================================================= */
+
+VelocityMeter {
+    height: auto;
+    padding: 1;
+    border: solid $border;
+    background: $panel;
+}
+
+/* =============================================================================
+   Modal Dialogs
+   ============================================================================= */
+
+MappingEditDialog,
+InputScreen {
+    align: center middle;
+}
+
+MappingEditDialog #dialog,
+InputScreen #dialog {
+    width: 60;
+    height: auto;
+    padding: 1;
+    background: $surface;
+    border: thick $primary;
+}
+
+MappingEditDialog #dialog-title,
+InputScreen #dialog-title {
+    text-align: center;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+MappingEditDialog .dialog-row,
+InputScreen .dialog-row {
+    margin-bottom: 1;
+    padding: 0 1;
+}
+
+MappingEditDialog .dialog-label,
+InputScreen .dialog-label {
+    color: $text-muted;
+    margin-bottom: 0;
+}
+
+MappingEditDialog #button-row,
+InputScreen #button-row {
+    align: center middle;
+    margin-top: 1;
+}
+
+MappingEditDialog #button-row Button,
+InputScreen #button-row Button {
+    margin: 0 1;
+}

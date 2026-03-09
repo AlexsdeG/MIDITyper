@@ -1,0 +1,35 @@
+{
+  "name": "TestSynth",
+  "description": "Test preset for verification",
+  "ui_modules": [
+    "event_log",
+    "active_notes_panel"
+  ],
+  "pages": [
+    {
+      "name": "Page 1",
+      "mappings": {
+        "KEY_A": {
+          "type": "note",
+          "note": 60,
+          "name": "C4"
+        },
+        "KEY_S": {
+          "type": "note",
+          "note": 62,
+          "name": "D4"
+        }
+      }
+    }
+  ],
+  "global_actions": {
+    "KEY_F12": {
+      "type": "action",
+      "action": "TOGGLE_CAPTURE"
+    },
+    "KEY_ESC": {
+      "type": "action",
+      "action": "PANIC"
+    }
+  }
+}

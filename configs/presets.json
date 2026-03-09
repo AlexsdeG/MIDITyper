@@ -1,0 +1,573 @@
+{
+  "active_preset": "piano_qwertz",
+  "presets": {
+    "piano_qwertz": {
+      "name": "Piano QWERTZ",
+      "description": "Standard QWERTZ keyboard layout for piano playing",
+      "base_octave": 4,
+      "key_mappings": {
+        "KEY_Z": {
+          "type": "note",
+          "note": 48,
+          "name": "C3"
+        },
+        "KEY_S": {
+          "type": "note",
+          "note": 49,
+          "name": "C#3"
+        },
+        "KEY_X": {
+          "type": "note",
+          "note": 50,
+          "name": "D3"
+        },
+        "KEY_D": {
+          "type": "note",
+          "note": 51,
+          "name": "D#3"
+        },
+        "KEY_C": {
+          "type": "note",
+          "note": 52,
+          "name": "E3"
+        },
+        "KEY_V": {
+          "type": "note",
+          "note": 53,
+          "name": "F3"
+        },
+        "KEY_G": {
+          "type": "note",
+          "note": 54,
+          "name": "F#3"
+        },
+        "KEY_B": {
+          "type": "note",
+          "note": 55,
+          "name": "G3"
+        },
+        "KEY_H": {
+          "type": "note",
+          "note": 56,
+          "name": "G#3"
+        },
+        "KEY_N": {
+          "type": "note",
+          "note": 57,
+          "name": "A3"
+        },
+        "KEY_J": {
+          "type": "note",
+          "note": 58,
+          "name": "A#3"
+        },
+        "KEY_M": {
+          "type": "note",
+          "note": 59,
+          "name": "B3"
+        },
+        "KEY_COMMA": {
+          "type": "note",
+          "note": 60,
+          "name": "C4"
+        },
+        "KEY_L": {
+          "type": "note",
+          "note": 61,
+          "name": "C#4"
+        },
+        "KEY_DOT": {
+          "type": "note",
+          "note": 62,
+          "name": "D4"
+        },
+        "KEY_SEMICOLON": {
+          "type": "note",
+          "note": 63,
+          "name": "D#4"
+        },
+        "KEY_SLASH": {
+          "type": "note",
+          "note": 64,
+          "name": "E4"
+        },
+        "KEY_Q": {
+          "type": "note",
+          "note": 60,
+          "name": "C4"
+        },
+        "KEY_2": {
+          "type": "note",
+          "note": 61,
+          "name": "C#4"
+        },
+        "KEY_W": {
+          "type": "note",
+          "note": 62,
+          "name": "D4"
+        },
+        "KEY_3": {
+          "type": "note",
+          "note": 63,
+          "name": "D#4"
+        },
+        "KEY_E": {
+          "type": "note",
+          "note": 64,
+          "name": "E4"
+        },
+        "KEY_R": {
+          "type": "note",
+          "note": 65,
+          "name": "F4"
+        },
+        "KEY_5": {
+          "type": "note",
+          "note": 66,
+          "name": "F#4"
+        },
+        "KEY_T": {
+          "type": "note",
+          "note": 67,
+          "name": "G4"
+        },
+        "KEY_6": {
+          "type": "note",
+          "note": 68,
+          "name": "G#4"
+        },
+        "KEY_Y": {
+          "type": "note",
+          "note": 69,
+          "name": "A4"
+        },
+        "KEY_7": {
+          "type": "note",
+          "note": 70,
+          "name": "A#4"
+        },
+        "KEY_U": {
+          "type": "note",
+          "note": 71,
+          "name": "B4"
+        },
+        "KEY_I": {
+          "type": "note",
+          "note": 72,
+          "name": "C5"
+        },
+        "KEY_9": {
+          "type": "note",
+          "note": 73,
+          "name": "C#5"
+        },
+        "KEY_O": {
+          "type": "note",
+          "note": 74,
+          "name": "D5"
+        },
+        "KEY_0": {
+          "type": "note",
+          "note": 75,
+          "name": "D#5"
+        },
+        "KEY_P": {
+          "type": "note",
+          "note": 76,
+          "name": "E5"
+        }
+      },
+      "action_mappings": {
+        "KEY_F12": {
+          "type": "action",
+          "action": "toggle_capture"
+        },
+        "KEY_F9": {
+          "type": "action",
+          "action": "octave_up"
+        },
+        "KEY_F10": {
+          "type": "action",
+          "action": "octave_down"
+        },
+        "KEY_ESC": {
+          "type": "action",
+          "action": "panic"
+        },
+        "KEY_MINUS": {
+          "type": "action",
+          "action": "velocity_down"
+        },
+        "KEY_EQUAL": {
+          "type": "action",
+          "action": "velocity_up"
+        }
+      }
+    },
+    "drums_qwertz": {
+      "name": "Drums QWERTZ",
+      "description": "QWERTZ keyboard layout for drum triggering (GM Drum Map)",
+      "base_octave": 0,
+      "key_mappings": {
+        "KEY_Y": {
+          "type": "note",
+          "note": 36,
+          "name": "Kick (C1)"
+        },
+        "KEY_X": {
+          "type": "note",
+          "note": 38,
+          "name": "Snare (D1)"
+        },
+        "KEY_C": {
+          "type": "note",
+          "note": 42,
+          "name": "Hi-Hat Closed (F#1)"
+        },
+        "KEY_V": {
+          "type": "note",
+          "note": 46,
+          "name": "Hi-Hat Open (A#1)"
+        },
+        "KEY_B": {
+          "type": "note",
+          "note": 43,
+          "name": "Tom Low (G1)"
+        },
+        "KEY_N": {
+          "type": "note",
+          "note": 47,
+          "name": "Tom Mid (B1)"
+        },
+        "KEY_M": {
+          "type": "note",
+          "note": 50,
+          "name": "Tom High (D2)"
+        },
+        "KEY_COMMA": {
+          "type": "note",
+          "note": 49,
+          "name": "Crash (C#2)"
+        },
+        "KEY_DOT": {
+          "type": "note",
+          "note": 51,
+          "name": "Ride (D#2)"
+        },
+        "KEY_SLASH": {
+          "type": "note",
+          "note": 56,
+          "name": "Cowbell (G#2)"
+        },
+        "KEY_Q": {
+          "type": "note",
+          "note": 35,
+          "name": "Kick 2 (B0)"
+        },
+        "KEY_W": {
+          "type": "note",
+          "note": 40,
+          "name": "Snare 2 (E1)"
+        },
+        "KEY_E": {
+          "type": "note",
+          "note": 44,
+          "name": "Hi-Hat Pedal (G#1)"
+        },
+        "KEY_R": {
+          "type": "note",
+          "note": 54,
+          "name": "Tambourine (F#2)"
+        },
+        "KEY_T": {
+          "type": "note",
+          "note": 53,
+          "name": "Ride Bell (F2)"
+        },
+        "KEY_Z": {
+          "type": "note",
+          "note": 37,
+          "name": "Side Stick (C#1)"
+        },
+        "KEY_U": {
+          "type": "note",
+          "note": 39,
+          "name": "Hand Clap (D#1)"
+        },
+        "KEY_I": {
+          "type": "note",
+          "note": 52,
+          "name": "China (E2)"
+        },
+        "KEY_O": {
+          "type": "note",
+          "note": 55,
+          "name": "Splash (G2)"
+        },
+        "KEY_P": {
+          "type": "note",
+          "note": 58,
+          "name": "Vibraslap (A#2)"
+        }
+      },
+      "action_mappings": {
+        "KEY_F12": {
+          "type": "action",
+          "action": "toggle_capture"
+        },
+        "KEY_F9": {
+          "type": "action",
+          "action": "octave_up"
+        },
+        "KEY_F10": {
+          "type": "action",
+          "action": "octave_down"
+        },
+        "KEY_ESC": {
+          "type": "action",
+          "action": "panic"
+        }
+      }
+    },
+    "chromatic_qwertz": {
+      "name": "Chromatic QWERTZ",
+      "description": "Full chromatic layout across multiple rows",
+      "base_octave": 3,
+      "key_mappings": {
+        "KEY_1": {
+          "type": "note",
+          "note": 48,
+          "name": "C3"
+        },
+        "KEY_Q": {
+          "type": "note",
+          "note": 49,
+          "name": "C#3"
+        },
+        "KEY_2": {
+          "type": "note",
+          "note": 50,
+          "name": "D3"
+        },
+        "KEY_W": {
+          "type": "note",
+          "note": 51,
+          "name": "D#3"
+        },
+        "KEY_3": {
+          "type": "note",
+          "note": 52,
+          "name": "E3"
+        },
+        "KEY_E": {
+          "type": "note",
+          "note": 53,
+          "name": "F3"
+        },
+        "KEY_R": {
+          "type": "note",
+          "note": 54,
+          "name": "F#3"
+        },
+        "KEY_4": {
+          "type": "note",
+          "note": 55,
+          "name": "G3"
+        },
+        "KEY_T": {
+          "type": "note",
+          "note": 56,
+          "name": "G#3"
+        },
+        "KEY_5": {
+          "type": "note",
+          "note": 57,
+          "name": "A3"
+        },
+        "KEY_Y": {
+          "type": "note",
+          "note": 58,
+          "name": "A#3"
+        },
+        "KEY_6": {
+          "type": "note",
+          "note": 59,
+          "name": "B3"
+        },
+        "KEY_U": {
+          "type": "note",
+          "note": 60,
+          "name": "C4"
+        },
+        "KEY_7": {
+          "type": "note",
+          "note": 61,
+          "name": "C#4"
+        },
+        "KEY_I": {
+          "type": "note",
+          "note": 62,
+          "name": "D4"
+        },
+        "KEY_8": {
+          "type": "note",
+          "note": 63,
+          "name": "D#4"
+        },
+        "KEY_9": {
+          "type": "note",
+          "note": 64,
+          "name": "E4"
+        },
+        "KEY_O": {
+          "type": "note",
+          "note": 65,
+          "name": "F4"
+        },
+        "KEY_0": {
+          "type": "note",
+          "note": 66,
+          "name": "F#4"
+        },
+        "KEY_MINUS": {
+          "type": "note",
+          "note": 67,
+          "name": "G4"
+        },
+        "KEY_P": {
+          "type": "note",
+          "note": 68,
+          "name": "G#4"
+        },
+        "KEY_LEFTBRACE": {
+          "type": "note",
+          "note": 69,
+          "name": "A4"
+        },
+        "KEY_A": {
+          "type": "note",
+          "note": 60,
+          "name": "C4"
+        },
+        "KEY_S": {
+          "type": "note",
+          "note": 61,
+          "name": "C#4"
+        },
+        "KEY_D": {
+          "type": "note",
+          "note": 62,
+          "name": "D4"
+        },
+        "KEY_F": {
+          "type": "note",
+          "note": 63,
+          "name": "D#4"
+        },
+        "KEY_G": {
+          "type": "note",
+          "note": 64,
+          "name": "E4"
+        },
+        "KEY_H": {
+          "type": "note",
+          "note": 65,
+          "name": "F4"
+        },
+        "KEY_J": {
+          "type": "note",
+          "note": 66,
+          "name": "F#4"
+        },
+        "KEY_K": {
+          "type": "note",
+          "note": 67,
+          "name": "G4"
+        },
+        "KEY_L": {
+          "type": "note",
+          "note": 68,
+          "name": "G#4"
+        },
+        "KEY_SEMICOLON": {
+          "type": "note",
+          "note": 69,
+          "name": "A4"
+        },
+        "KEY_APOSTROPHE": {
+          "type": "note",
+          "note": 70,
+          "name": "A#4"
+        },
+        "KEY_Z": {
+          "type": "note",
+          "note": 72,
+          "name": "C5"
+        },
+        "KEY_X": {
+          "type": "note",
+          "note": 73,
+          "name": "C#5"
+        },
+        "KEY_C": {
+          "type": "note",
+          "note": 74,
+          "name": "D5"
+        },
+        "KEY_V": {
+          "type": "note",
+          "note": 75,
+          "name": "D#5"
+        },
+        "KEY_B": {
+          "type": "note",
+          "note": 76,
+          "name": "E5"
+        },
+        "KEY_N": {
+          "type": "note",
+          "note": 77,
+          "name": "F5"
+        },
+        "KEY_M": {
+          "type": "note",
+          "note": 78,
+          "name": "F#5"
+        },
+        "KEY_COMMA": {
+          "type": "note",
+          "note": 79,
+          "name": "G5"
+        },
+        "KEY_DOT": {
+          "type": "note",
+          "note": 80,
+          "name": "G#5"
+        },
+        "KEY_SLASH": {
+          "type": "note",
+          "note": 81,
+          "name": "A5"
+        }
+      },
+      "action_mappings": {
+        "KEY_F12": {
+          "type": "action",
+          "action": "toggle_capture"
+        },
+        "KEY_F9": {
+          "type": "action",
+          "action": "octave_up"
+        },
+        "KEY_F10": {
+          "type": "action",
+          "action": "octave_down"
+        },
+        "KEY_ESC": {
+          "type": "action",
+          "action": "panic"
+        }
+      }
+    }
+  }
+}
