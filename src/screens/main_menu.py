@@ -124,6 +124,13 @@ class MainMenuScreen(Screen):
     def on_mount(self) -> None:
         """Focus the first button when screen mounts."""
         self.query_one("#btn-start").focus()
+
+    def on_show(self) -> None:
+        """Restore focus when returning from other screens."""
+        try:
+            self.query_one("#btn-start").focus()
+        except Exception:
+            pass
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press events."""

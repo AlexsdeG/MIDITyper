@@ -68,14 +68,17 @@
   - **Note:** Added `normalize_key_name()` function that converts user input ('A', 'a', 'key_a') to proper evdev format ('KEY_A'). Validates against ecodes.KEY and ecodes.BTN. Applied in `_handle_key_input()` with error notification for invalid keys.
 
 ### Phase 5: ESC Return and Black-Screen Fix
-- [ ] **Step 5.1:** Stabilize cleanup ordering for ESC/back in `src/screens/capture_screen.py:860-870` and `src/tui.py:289-293`.
+- [x] **Step 5.1:** Stabilize cleanup ordering for ESC/back in `src/screens/capture_screen.py:860-870` and `src/tui.py:289-293`.
   - **Verify:** Repeated ESC always returns to visible main menu without blank frame.
+  - **Note:** Added re-entry guard (`_is_exiting`) and cleanup ordering in `CaptureScreen._cleanup_and_exit()`: force passthrough first, panic, stop capture, then navigate.
 
-- [ ] **Step 5.2:** Add screen-stack safety checks for pop transitions in `src/screens/capture_screen.py:860-870` and `src/tui.py:101-104`.
+- [x] **Step 5.2:** Add screen-stack safety checks for pop transitions in `src/screens/capture_screen.py:860-870` and `src/tui.py:101-104`.
   - **Verify:** No empty render state from back-navigation.
+  - **Note:** Added fallback navigation to `main_menu` when stack depth is 1 in both `CaptureScreen._cleanup_and_exit()` and `KeyboardMidiApp.action_back()`.
 
-- [ ] **Step 5.3:** Confirm `MainMenuScreen` focus/render reliability on return in `src/screens/main_menu.py:124-126`.
+- [x] **Step 5.3:** Confirm `MainMenuScreen` focus/render reliability on return in `src/screens/main_menu.py:124-126`.
   - **Verify:** `#btn-start` receives focus and UI remains visible after ESC return.
+  - **Note:** Added `MainMenuScreen.on_show()` to refocus `#btn-start` whenever returning to the main menu.
 
 ### Phase 6: Regression Coverage
 - [ ] **Step 6.1:** Add tests for capture toggle/grab sync, page sync, and velocity clamp under `tests/`.

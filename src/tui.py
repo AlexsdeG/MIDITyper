@@ -119,6 +119,8 @@ class KeyboardMidiApp(App):
         """Go back to previous screen."""
         if len(self.screen_stack) > 1:
             self.pop_screen()
+        else:
+            self.switch_screen("main_menu")
     
     async def initialize_capture_resources(self) -> bool:
         """

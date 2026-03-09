@@ -543,6 +543,7 @@ class CaptureScreen(Screen):
     
     # Internal preset reference
     _preset_loaded: bool = False
+    _is_exiting: bool = False
     
     def compose(self) -> ComposeResult:
         """Create the capture screen layout dynamically based on preset."""
@@ -938,16 +939,31 @@ class CaptureScreen(Screen):
 
     async def _cleanup_and_exit(self) -> None:
         """Clean up and return to main menu with capture disabled."""
+        if self._is_exiting:
+            logger.debug("CaptureScreen cleanup already in progress")
+            return
+
+        self._is_exiting = True
         logger.info("CaptureScreen cleanup started")
 
-        if hasattr(self.app, 'midi_engine') and self.app.midi_engine:
-            self.app.midi_engine.panic()
+        try:
+            # First force passthrough state to avoid stale capture state during teardown.
+            if hasattr(self.app, "set_capture_mode"):
+                self.app.set_capture_mode(False)
 
-        if hasattr(self.app, 'stop_capture'):
-            await self.app.stop_capture()
+            if hasattr(self.app, "midi_engine") and self.app.midi_engine:
+                self.app.midi_engine.panic()
 
-        logger.info("CaptureScreen cleanup complete, popping screen")
-        self.app.pop_screen()
+            if hasattr(self.app, "stop_capture"):
+                await self.app.stop_capture()
+
+            logger.info("CaptureScreen cleanup complete, returning to main menu")
+            if len(self.app.screen_stack) > 1:
+                self.app.pop_screen()
+            else:
+                self.app.switch_screen("main_menu")
+        finally:
+            self._is_exiting = False
     
     def add_key_event(self, key_name: str, is_pressed: bool, note: str = "") -> None:
         """
