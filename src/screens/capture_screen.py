@@ -705,6 +705,8 @@ class CaptureScreen(Screen):
         if hasattr(self.app, 'state_manager') and self.app.state_manager:
             self.min_velocity = getattr(self.app.state_manager, 'min_velocity', 100)
             self.max_velocity = getattr(self.app.state_manager, 'max_velocity', 100)
+            # Sync current page from state manager
+            self.current_page = self.app.state_manager.current_page_index
         elif hasattr(self.app, 'config') and self.app.config:
             self.min_velocity = self.app.config.settings.min_velocity
             self.max_velocity = self.app.config.settings.max_velocity
@@ -812,6 +814,9 @@ class CaptureScreen(Screen):
 
         if hasattr(self.app, "load_preset") and self.app.load_preset(event.value):
             self.current_page = 0
+            # Sync with state manager for key resolution
+            if hasattr(self.app, 'state_manager') and self.app.state_manager:
+                self.app.state_manager.current_page_index = 0
             self._load_preset_async()
             event_log = self._get_event_log()
             if event_log:
@@ -882,6 +887,9 @@ class CaptureScreen(Screen):
         """Go to next page."""
         if self.current_page < self.total_pages - 1:
             self.current_page += 1
+            # Sync with state manager for key resolution
+            if hasattr(self.app, 'state_manager') and self.app.state_manager:
+                self.app.state_manager.current_page_index = self.current_page
             self._update_page_display()
             event_log = self._get_event_log()
             if event_log:
@@ -891,6 +899,9 @@ class CaptureScreen(Screen):
         """Go to previous page."""
         if self.current_page > 0:
             self.current_page -= 1
+            # Sync with state manager for key resolution
+            if hasattr(self.app, 'state_manager') and self.app.state_manager:
+                self.app.state_manager.current_page_index = self.current_page
             self._update_page_display()
             event_log = self._get_event_log()
             if event_log:
@@ -1043,24 +1054,3 @@ class CaptureScreen(Screen):
         self._update_status_display()
         self._update_page_display()
         self.update_velocity_range(self.min_velocity, self.max_velocity)
-
-    def _sync_active_notes(self) -> None:
-        """Periodic callback to sync active notes display from state manager."""
-        if not hasattr(self.app, 'state_manager') or not self.app.state_manager:
-            return
-        if not hasattr(self.app, 'preset') or not self.app.preset:
-            return
-
-        active_notes = self.app.state_manager.get_active_notes()
-        page_index = getattr(self.app.state_manager, 'current_page_index', 0)
-        page = self.app.preset.get_page(page_index)
-        note_names = []
-        if page:
-            for note in active_notes.keys():
-                match = next((m.name for m in page.mappings.values() if m.note == note), None)
-                note_names.append(match or str(note))
-
-        try:
-            self.update_active_notes(len(active_notes), note_names)
-        except Exception:
-            pass

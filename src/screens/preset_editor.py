@@ -15,6 +15,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from rich.text import Text
 
+from evdev import ecodes
+
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical, Horizontal, ScrollableContainer
 from textual.screen import Screen, ModalScreen
@@ -26,6 +28,53 @@ from textual.widgets import (
 from textual.reactive import reactive
 from textual.message import Message
 from textual.binding import Binding
+
+
+def normalize_key_name(key_input: str) -> Optional[str]:
+    """
+    Normalize user key input to evdev KEY_ format.
+    
+    Examples:
+        'A' -> 'KEY_A'
+        'a' -> 'KEY_A'
+        'KEY_A' -> 'KEY_A'
+        'key_a' -> 'KEY_A'
+        'SPACE' -> 'KEY_SPACE'
+    
+    Args:
+        key_input: User input string
+        
+    Returns:
+        Normalized key name if valid, None if invalid
+    """
+    if not key_input:
+        return None
+    
+    # Strip whitespace and convert to uppercase
+    key_input = key_input.strip().upper()
+    
+    # If already has KEY_ prefix, validate it exists in ecodes
+    if key_input.startswith('KEY_'):
+        # Check if it exists in ecodes.KEY
+        for name in dir(ecodes):
+            if name == key_input:
+                return key_input
+        return None
+    
+    # Add KEY_ prefix and validate
+    normalized = f'KEY_{key_input}'
+    for name in dir(ecodes):
+        if name == normalized:
+            return normalized
+    
+    # Check if it's a button code (BTN_)
+    if key_input.startswith('BTN_'):
+        for name in dir(ecodes):
+            if name == key_input:
+                return key_input
+        return None
+    
+    return None
 
 
 # Available UI modules
@@ -1029,6 +1078,15 @@ class PresetEditorScreen(Screen):
         if not key_name:
             return
         
+        # Normalize key name to evdev format (KEY_A, etc.)
+        normalized_key = normalize_key_name(key_name)
+        if not normalized_key:
+            self.notify(
+                f"Invalid key name: '{key_name}'. Use format like 'A', 'SPACE', or 'KEY_A'",
+                severity="error"
+            )
+            return
+        
         result = getattr(self, '_pending_mapping', None)
         target = getattr(self, '_pending_mapping_target', 'page')
         
@@ -1041,14 +1099,14 @@ class PresetEditorScreen(Screen):
                 return
             
             mappings = pages[self.selected_page_index].setdefault("mappings", {})
-            mappings[key_name] = result
+            mappings[normalized_key] = result
             self._refresh_mapping_table()
         elif target == "global":
             global_mappings = self._preset_data.setdefault("global_mappings", {})
-            global_mappings[key_name] = result
+            global_mappings[normalized_key] = result
             self._refresh_global_mappings_table()
         
-        self.notify(f"Added mapping for {key_name}", severity="information")
+        self.notify(f"Added mapping for {normalized_key}", severity="information")
     
     def _handle_edit_result(self, key_name: str, result: Optional[Dict], target: str) -> None:
         """Handle the result from the mapping dialog for editing."""

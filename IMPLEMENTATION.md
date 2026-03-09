@@ -55,14 +55,17 @@
   - **Note:** Layout already correct from Step 3.2 implementation. VelocitySliderSection composes Min then Max rows sequentially in Vertical containers with proper height:auto and margin-bottom:1 spacing.
 
 ### Phase 4: Mapping and Page-State Reliability
-- [ ] **Step 4.1:** Remove duplicate `_sync_active_notes` and keep one authoritative implementation in `src/screens/capture_screen.py:901-1004`.
+- [x] **Step 4.1:** Remove duplicate `_sync_active_notes` and keep one authoritative implementation in `src/screens/capture_screen.py:901-1004`.
   - **Verify:** Active notes panel updates correctly with only one method definition.
+  - **Note:** Removed duplicate method at end of file (line 1047). Kept first implementation at line 982 which uses cleaner `getattr` pattern and maintains same defensive behavior.
 
-- [ ] **Step 4.2:** Synchronize capture `current_page` with `state_manager.current_page_index` in `src/screens/capture_screen.py:689-708` and `src/screens/capture_screen.py:789-822`.
+- [x] **Step 4.2:** Synchronize capture `current_page` with `state_manager.current_page_index` in `src/screens/capture_screen.py:689-708` and `src/screens/capture_screen.py:789-822`.
   - **Verify:** F9/F10 updates page display and actual key resolution page.
+  - **Note:** Added bidirectional sync: load current_page from state_manager in `_load_preset_async()`, and update state_manager.current_page_index in `action_page_up()`, `action_page_down()`, and preset switching.
 
-- [ ] **Step 4.3:** Normalize key names from editor input in `src/screens/preset_editor.py:1018-1051` and confirm lookup compatibility with evdev key names in `src/input_listener.py:155-163`.
+- [x] **Step 4.3:** Normalize key names from editor input in `src/screens/preset_editor.py:1018-1051` and confirm lookup compatibility with evdev key names in `src/input_listener.py:155-163`.
   - **Verify:** Add `KEY_A` mapping, save, reload, press `A`, and receive MIDI output.
+  - **Note:** Added `normalize_key_name()` function that converts user input ('A', 'a', 'key_a') to proper evdev format ('KEY_A'). Validates against ecodes.KEY and ecodes.BTN. Applied in `_handle_key_input()` with error notification for invalid keys.
 
 ### Phase 5: ESC Return and Black-Screen Fix
 - [ ] **Step 5.1:** Stabilize cleanup ordering for ESC/back in `src/screens/capture_screen.py:860-870` and `src/tui.py:289-293`.
