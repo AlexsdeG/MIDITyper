@@ -229,13 +229,40 @@ class KeyboardMidiApp(App):
 
         return True
     
-    async def start_capture(self) -> None:
-        """Start the input capture."""
+    async def start_capture(self) -> bool:
+        """Start the input capture.
+
+        Returns:
+            True when capture listener is running and ready.
+        """
         logger.info("Starting capture listener")
         if self.input_listener:
-            await self.input_listener.start()
+            started = await self.input_listener.start()
+            if not started:
+                self.notify(
+                    "Unable to start keyboard capture. "
+                    "Check permissions/device selection in Settings.",
+                    severity="warning",
+                    title="Capture Unavailable",
+                )
+                logger.warning("Input capture did not reach ready state")
+                return False
+
             logger.info("Input capture started")
-            self.set_capture_mode(self.state_manager.is_captured if self.state_manager else True)
+            captured = self.set_capture_mode(
+                self.state_manager.is_captured if self.state_manager else True
+            )
+            if not captured and self.state_manager and self.state_manager.is_captured:
+                self.notify(
+                    "Capture requested, but keyboard grab failed. "
+                    "Use Settings to rescan/select a device.",
+                    severity="warning",
+                    title="Capture Warning",
+                )
+                return False
+            return True
+
+        return False
 
     async def stop_capture(self) -> None:
         """Stop the input capture and force passthrough state."""
@@ -251,7 +278,11 @@ class KeyboardMidiApp(App):
         if self.state_manager:
             self.state_manager.set_capture(captured)
         if self.input_listener:
-            self.input_listener.sync_grab_state()
+            sync_ok = self.input_listener.sync_grab_state()
+            if captured and not sync_ok and self.state_manager:
+                logger.warning("Capture mode sync failed; forcing passthrough")
+                self.state_manager.set_capture(False)
+                self.input_listener.sync_grab_state()
             logger.debug("Synchronized listener grab state after mode change")
         return self.state_manager.is_captured if self.state_manager else captured
 

@@ -26,8 +26,9 @@ class DummyInputListener:
     def __init__(self) -> None:
         self.sync_calls = 0
 
-    def sync_grab_state(self) -> None:
+    def sync_grab_state(self) -> bool:
         self.sync_calls += 1
+        return True
 
 
 def test_set_capture_mode_syncs_grab_state() -> None:

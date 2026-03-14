@@ -77,6 +77,9 @@ class InputListener:
         self._device: Optional[InputDevice] = None
         self._running = False
         self._task: Optional[asyncio.Task] = None
+        self._startup_ready = asyncio.Event()
+        self._startup_timeout_seconds = 5.0
+        self._last_start_error: Optional[str] = None
         
         # Track if device was grabbed
         self._is_grabbed = False
@@ -125,18 +128,27 @@ class InputListener:
             logger.error(f"Failed to open device {self._device_path}: {e}")
             raise
 
-    def _grab_device(self) -> None:
-        """Grab the device to capture all input events exclusively."""
+    def _grab_device(self) -> bool:
+        """Grab the device to capture all input events exclusively.
+
+        Returns:
+            True when the device is grabbed or already grabbed.
+        """
         if not self._device or self._is_grabbed:
-            return
+            return self._is_grabbed
 
         try:
             self._device.grab()
             self._is_grabbed = True
-            logger.debug("Device grabbed - capturing input exclusively")
+            logger.info("Device grabbed - capturing input exclusively")
+            return True
         except OSError as error:
             self._is_grabbed = False
-            logger.error("Failed to grab input device: %s", error)
+            self._last_start_error = (
+                f"Failed to grab input device {self._device_path}: {error}"
+            )
+            logger.error(self._last_start_error)
+            return False
 
     def _ungrab_device(self) -> None:
         """Ungrab the device to allow passthrough to OS."""
@@ -151,14 +163,19 @@ class InputListener:
         finally:
             self._is_grabbed = False
 
-    def _update_grab_state(self) -> None:
-        """Update device grab state based on state_manager.is_captured."""
+    def _update_grab_state(self) -> bool:
+        """Update device grab state based on state_manager.is_captured.
+
+        Returns:
+            True if requested mode is successfully applied.
+        """
         if self._state_manager.is_captured:
-            self._grab_device()
-        else:
-            # Send Note Off for all active notes before ungrabbing
-            self._send_all_notes_off()
-            self._ungrab_device()
+            return self._grab_device()
+
+        # Send Note Off for all active notes before ungrabbing
+        self._send_all_notes_off()
+        self._ungrab_device()
+        return True
 
     def _send_all_notes_off(self) -> None:
         """Send Note Off for all tracked active notes."""
@@ -219,7 +236,8 @@ class InputListener:
         
         if action_upper == "TOGGLE_CAPTURE":
             self._state_manager.toggle_capture()
-            self._update_grab_state()
+            if not self._update_grab_state():
+                logger.warning("Capture toggle requested but device grab failed")
             
         elif action_upper == "PAGE_UP":
             self._state_manager.next_page()
@@ -345,15 +363,20 @@ class InputListener:
         This runs continuously until stop() is called or an error occurs.
         """
         try:
+            self._last_start_error = None
             # Open the device
             self._device = self._open_device()
             
             # Initial grab state
-            if self._state_manager.is_captured:
-                self._grab_device()
+            if self._state_manager.is_captured and not self._grab_device():
+                raise RuntimeError(
+                    self._last_start_error
+                    or "Capture requested, but keyboard grab failed"
+                )
             
             self._running = True
             logger.info(f"Started listening to {self._device.name}")
+            self._startup_ready.set()
 
             # Main event loop
             async for event in self._device.async_read_loop():
@@ -378,6 +401,7 @@ class InputListener:
         except OSError as e:
             # Device disconnected or other I/O error
             logger.error(f"Device error: {e}")
+            self._last_start_error = str(e)
             if self._on_device_error:
                 self._on_device_error(e)
             # Send panic to prevent hanging notes
@@ -385,10 +409,12 @@ class InputListener:
             
         except Exception as e:
             logger.error(f"Unexpected error in input listener: {e}")
+            self._last_start_error = str(e)
             if self._on_device_error:
                 self._on_device_error(e)
             
         finally:
+            self._startup_ready.set()
             self._cleanup()
 
     def _cleanup(self) -> None:
@@ -404,18 +430,48 @@ class InputListener:
         
         # Device is closed automatically by async_read_loop context
 
-    async def start(self) -> None:
+    async def start(self) -> bool:
         """
         Start the input listener asynchronously.
         
         This creates a background task that reads events from the device.
+
+        Returns:
+            True if the listener reaches a running/ready state.
         """
         if self._running:
             logger.warning("Input listener already running")
-            return
+            return True
 
+        self._startup_ready.clear()
+        self._last_start_error = None
         self._task = asyncio.create_task(self._event_loop())
+        logger.info("Input listener start requested")
+
+        try:
+            await asyncio.wait_for(
+                self._startup_ready.wait(),
+                timeout=self._startup_timeout_seconds,
+            )
+        except asyncio.TimeoutError:
+            self._last_start_error = (
+                "Timed out waiting for input listener startup readiness"
+            )
+            logger.error(self._last_start_error)
+            if self._task:
+                self._task.cancel()
+            self._running = False
+            return False
+
+        if not self._running:
+            logger.error(
+                "Input listener failed to start: %s",
+                self._last_start_error or "unknown startup error",
+            )
+            return False
+
         logger.info("Input listener started")
+        return True
 
     async def stop(self) -> None:
         """
@@ -423,9 +479,6 @@ class InputListener:
         
         This cancels the background task and cleans up resources.
         """
-        if not self._running:
-            return
-
         self._running = False
         
         if self._task:
@@ -440,9 +493,13 @@ class InputListener:
         self._send_all_notes_off()
         logger.info("Input listener stopped")
 
-    def sync_grab_state(self) -> None:
-        """Synchronize keyboard grab state with the current capture flag."""
-        self._update_grab_state()
+    def sync_grab_state(self) -> bool:
+        """Synchronize keyboard grab state with the current capture flag.
+
+        Returns:
+            True if requested mode is successfully applied.
+        """
+        return self._update_grab_state()
 
     async def __aenter__(self) -> "InputListener":
         """Async context manager entry."""

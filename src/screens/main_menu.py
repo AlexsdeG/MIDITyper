@@ -151,7 +151,9 @@ class MainMenuScreen(Screen):
         if not initialized:
             return
 
-        await self.app.start_capture()
+        started = await self.app.start_capture()
+        if not started:
+            return
         self.app.push_screen("capture")
     
     def action_presets(self) -> None:

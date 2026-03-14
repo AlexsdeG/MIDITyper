@@ -95,3 +95,16 @@
 - Velocity UI remains integer-only.
 - Capture-on-entry respects `start_captured`.
 - Unmapped keys should not be logged in capture event log.
+
+### Phase 7: Capture Startup Reliability (In Progress)
+- [x] **Step 7.1:** Add input-listener startup readiness handshake so capture start only succeeds after device open/grab attempt completes.
+  - **Verify:** Listener returns failure when grab fails instead of optimistic success.
+  - **Note:** Implemented readiness event and timeout in `src/input_listener.py` (`start`, `_event_loop`) with startup error propagation.
+
+- [x] **Step 7.2:** Gate capture-screen navigation on capture start success.
+  - **Verify:** Main menu does not open capture screen when listener startup fails.
+  - **Note:** Updated `src/screens/main_menu.py` to require `start_capture()` success before `push_screen("capture")`.
+
+- [x] **Step 7.3:** Force passthrough fallback when capture sync fails.
+  - **Verify:** Failed capture-mode sync no longer leaves UI in a false-capturing state.
+  - **Note:** Updated `src/tui.py::set_capture_mode` to detect failed sync and revert to passthrough with warnings.
