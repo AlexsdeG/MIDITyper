@@ -59,7 +59,20 @@ class ActionMapping(BaseModel):
         "PANIC",
         "VELOCITY_UP",
         "VELOCITY_DOWN",
-        "QUIT"
+        "QUIT",
+        "TRACK_SELECT_NEXT",
+        "TRACK_SELECT_PREV",
+        "TRACK_MUTE_TOGGLE",
+        "TRACK_SOLO_TOGGLE",
+        "LOOP_TOGGLE",
+        "LOOP_IN_SET",
+        "LOOP_OUT_SET",
+        "LOOP_ENABLE",
+        "LOOP_DISABLE",
+        "ZOOM_IN",
+        "ZOOM_OUT",
+        "MOVE_LEFT",
+        "MOVE_RIGHT",
     ] = Field(
         ...,
         description="Action to perform"

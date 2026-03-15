@@ -172,14 +172,28 @@ Trigger an application action:
 
 #### Available Actions
 
-| Action | Description |
-|--------|-------------|
-| `TOGGLE_CAPTURE` | Switch between capture and passthrough mode |
-| `PAGE_UP` | Go to next page |
-| `PAGE_DOWN` | Go to previous page |
-| `PANIC` | Send All Notes Off |
-| `VELOCITY_UP` | Increase note velocity |
-| `VELOCITY_DOWN` | Decrease note velocity |
+| Action | Type | MIDI/Behavior | Description |
+|--------|------|---------------|-------------|
+| `TOGGLE_CAPTURE` | `action` | App state | Switch between capture and passthrough mode |
+| `PAGE_UP` | `action` | App state | Go to next page |
+| `PAGE_DOWN` | `action` | App state | Go to previous page |
+| `PANIC` | `action` | MIDI Panic | Send All Notes Off |
+| `VELOCITY_UP` | `action` | App state | Increase note velocity |
+| `VELOCITY_DOWN` | `action` | App state | Decrease note velocity |
+| `QUIT` | `action` | App state | Trigger app quit flow |
+| `TRACK_SELECT_NEXT` | `action` | CC 20 (127) | DAW: select next track |
+| `TRACK_SELECT_PREV` | `action` | CC 21 (127) | DAW: select previous track |
+| `TRACK_MUTE_TOGGLE` | `action` | CC 22 (0/127 toggle) | DAW: toggle track mute |
+| `TRACK_SOLO_TOGGLE` | `action` | CC 23 (0/127 toggle) | DAW: toggle track solo |
+| `LOOP_TOGGLE` | `action` | CC 24 (0/127 toggle) | DAW: toggle loop |
+| `LOOP_IN_SET` | `action` | CC 25 (127) | DAW: set loop in point |
+| `LOOP_OUT_SET` | `action` | CC 26 (127) | DAW: set loop out point |
+| `LOOP_ENABLE` | `action` | CC 24 (127) | DAW: force loop on |
+| `LOOP_DISABLE` | `action` | CC 24 (0) | DAW: force loop off |
+| `ZOOM_IN` | `action` | CC 27 (127) | DAW: zoom in |
+| `ZOOM_OUT` | `action` | CC 28 (127) | DAW: zoom out |
+| `MOVE_LEFT` | `action` | CC 29 (127) | DAW: move/scroll left |
+| `MOVE_RIGHT` | `action` | CC 30 (127) | DAW: move/scroll right |
 
 ---
 

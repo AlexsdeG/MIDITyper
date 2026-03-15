@@ -2,6 +2,8 @@
 
 from types import SimpleNamespace
 
+from src.config_parser import ActionMapping, NoteMapping, Page, Preset
+from src.input_listener import InputListener
 from src.screens.capture_screen import CaptureScreen
 from src.screens.preset_editor import normalize_key_name
 from src.state_manager import StateManager
@@ -107,3 +109,47 @@ def test_normalize_key_name_accepts_editor_input_variants() -> None:
     assert normalize_key_name("space") == "KEY_SPACE"
     assert normalize_key_name(" key_enter ") == "KEY_ENTER"
     assert normalize_key_name("not_a_real_key") is None
+
+
+def test_passthrough_ignores_note_mappings_but_allows_toggle_capture() -> None:
+    """Passthrough should not send MIDI notes, but TOGGLE_CAPTURE must still work."""
+
+    class DummyMidiEngine:
+        def __init__(self) -> None:
+            self.note_on_calls = 0
+
+        def send_note_on(self, note: int, velocity: int, channel: int) -> None:
+            self.note_on_calls += 1
+
+        def send_note_off(self, note: int, channel: int) -> None:
+            pass
+
+        def panic(self) -> None:
+            pass
+
+    state = StateManager(is_captured=False)
+    preset = Preset(
+        name="Test",
+        pages=[
+            Page(
+                name="Page 1",
+                mappings={"KEY_A": NoteMapping(note=60, name="C4")},
+            )
+        ],
+        global_actions={"KEY_F12": ActionMapping(action="TOGGLE_CAPTURE")},
+    )
+    state.set_active_preset(preset)
+
+    midi = DummyMidiEngine()
+    listener = InputListener(
+        device_path="/dev/input/event0",
+        state_manager=state,
+        midi_engine=midi,
+    )
+
+    listener._process_key_event("KEY_A", 1)
+    assert midi.note_on_calls == 0
+    assert state.is_captured is False
+
+    listener._process_key_event("KEY_F12", 1)
+    assert state.is_captured is True

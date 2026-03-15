@@ -258,6 +258,23 @@ class InputListener:
         elif action_upper == "QUIT":
             # Signal app to quit (handled by callback)
             logger.info("QUIT action triggered")
+
+        elif action_upper in {
+            "TRACK_SELECT_NEXT",
+            "TRACK_SELECT_PREV",
+            "TRACK_MUTE_TOGGLE",
+            "TRACK_SOLO_TOGGLE",
+            "LOOP_TOGGLE",
+            "LOOP_IN_SET",
+            "LOOP_OUT_SET",
+            "LOOP_ENABLE",
+            "LOOP_DISABLE",
+            "ZOOM_IN",
+            "ZOOM_OUT",
+            "MOVE_LEFT",
+            "MOVE_RIGHT",
+        }:
+            self._midi_engine.send_daw_action(action_upper)
             
         else:
             logger.warning(f"Unknown action: {action}")
@@ -286,6 +303,16 @@ class InputListener:
 
         # Skip key hold events
         if event_value == KeyEvent.KEY_HOLD:
+            return
+
+        # In passthrough mode, ignore note/action processing so keys behave normally
+        # in other applications. Allow only TOGGLE_CAPTURE on key down so capture can
+        # be resumed from the keyboard.
+        if not self._state_manager.is_captured:
+            if is_pressed:
+                action = self._resolve_action_for_key(keycode, preset)
+                if action == "TOGGLE_CAPTURE":
+                    self._handle_action(action)
             return
 
         # Track if we found a mapping
@@ -332,6 +359,23 @@ class InputListener:
         # Notify callback if set
         if self._on_key_event and (is_pressed or is_release):
             self._on_key_event(keycode, is_pressed)
+
+    def _resolve_action_for_key(self, keycode: str, preset: Preset) -> Optional[str]:
+        """Resolve an action mapping for a key across preset/settings scopes."""
+        if keycode in preset.global_actions:
+            return preset.global_actions[keycode].action
+
+        if keycode in preset.global_mappings:
+            mapping = preset.global_mappings[keycode]
+            if mapping.get("type") == "action":
+                return mapping.get("action")
+
+        if self._settings and keycode in self._settings.app_global_mappings:
+            mapping = self._settings.app_global_mappings[keycode]
+            if mapping.get("type") == "action":
+                return mapping.get("action")
+
+        return None
     
     def _handle_mapping(self, mapping: dict, is_pressed: bool) -> None:
         """

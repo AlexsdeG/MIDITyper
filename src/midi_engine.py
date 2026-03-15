@@ -55,9 +55,28 @@ class MidiEngine:
         self._max_velocity = max_velocity
         self._port: Optional[BaseOutput] = None
         self._active_notes: set[tuple[int, int]] = set()  # (note, channel) pairs
+        self._daw_toggle_states: dict[str, bool] = {
+            "TRACK_MUTE_TOGGLE": False,
+            "TRACK_SOLO_TOGGLE": False,
+            "LOOP_TOGGLE": False,
+        }
 
         # Open the virtual port
         self._open_port()
+
+    _DAW_ACTION_CC_MAP: dict[str, int] = {
+        "TRACK_SELECT_NEXT": 20,
+        "TRACK_SELECT_PREV": 21,
+        "TRACK_MUTE_TOGGLE": 22,
+        "TRACK_SOLO_TOGGLE": 23,
+        "LOOP_TOGGLE": 24,
+        "LOOP_IN_SET": 25,
+        "LOOP_OUT_SET": 26,
+        "ZOOM_IN": 27,
+        "ZOOM_OUT": 28,
+        "MOVE_LEFT": 29,
+        "MOVE_RIGHT": 30,
+    }
 
     def _open_port(self) -> None:
         """Open the virtual MIDI output port."""
@@ -243,6 +262,43 @@ class MidiEngine:
         self._port.send(msg)
 
         logger.debug(f"CC: control={control}, value={value}, channel={channel}")
+
+    def send_daw_action(self, action: str, channel: Optional[int] = None) -> None:
+        """Send a DAW control action as a MIDI CC message.
+
+        DAWs can map these CC messages via MIDI Learn to transport, track, and
+        arrangement controls.
+
+        Args:
+            action: Action name from the supported DAW action list
+            channel: MIDI channel (0-15), uses default if not specified
+        """
+        action_upper = action.upper()
+
+        if action_upper == "LOOP_ENABLE":
+            self.send_control_change(self._DAW_ACTION_CC_MAP["LOOP_TOGGLE"], 127, channel)
+            self._daw_toggle_states["LOOP_TOGGLE"] = True
+            return
+
+        if action_upper == "LOOP_DISABLE":
+            self.send_control_change(self._DAW_ACTION_CC_MAP["LOOP_TOGGLE"], 0, channel)
+            self._daw_toggle_states["LOOP_TOGGLE"] = False
+            return
+
+        if action_upper not in self._DAW_ACTION_CC_MAP:
+            logger.warning("Unsupported DAW action: %s", action)
+            return
+
+        control = self._DAW_ACTION_CC_MAP[action_upper]
+
+        if action_upper in self._daw_toggle_states:
+            new_state = not self._daw_toggle_states[action_upper]
+            self._daw_toggle_states[action_upper] = new_state
+            value = 127 if new_state else 0
+        else:
+            value = 127
+
+        self.send_control_change(control, value, channel)
 
     def panic(self) -> None:
         """
