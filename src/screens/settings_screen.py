@@ -227,8 +227,8 @@ class SettingsScreen(Screen):
     port_name: reactive[str] = reactive("MIDITyper")
     auto_detect: reactive[bool] = reactive(True)
     theme: reactive[str] = reactive("dark")
-    min_velocity: reactive[int] = reactive(100)
-    max_velocity: reactive[int] = reactive(100)
+    min_velocity: reactive[int] = reactive(90)
+    max_velocity: reactive[int] = reactive(115)
     
     def __init__(self):
         super().__init__()
@@ -288,22 +288,24 @@ class SettingsScreen(Screen):
                             classes="setting-widget"
                         )
                     
-                    # Velocity Range
+                    # Velocity Range (min != max enables random velocity per note)
                     with Container(classes="setting-row"):
                         yield Label("Min Velocity:", classes="setting-label")
-                        yield Select(
-                            options=[(str(i), i) for i in list(range(1, 128, 10)) + [100]],
-                            value=100,
-                            id="min-velocity-select",
+                        yield Input(
+                            "90",
+                            id="settings-min-vel-input",
+                            type="integer",
+                            placeholder="1-127",
                             classes="setting-widget"
                         )
-                    
+
                     with Container(classes="setting-row"):
                         yield Label("Max Velocity:", classes="setting-label")
-                        yield Select(
-                            options=[(str(i), i) for i in list(range(1, 128, 10)) + [100]],
-                            value=100,
-                            id="max-velocity-select",
+                        yield Input(
+                            "115",
+                            id="settings-max-vel-input",
+                            type="integer",
+                            placeholder="1-127",
                             classes="setting-widget"
                         )
             
@@ -373,7 +375,7 @@ class SettingsScreen(Screen):
         ]
         self._port_options = options
         return options
-    
+
     def _refresh_global_keybinds_table(self) -> None:
         """Refresh the global keybinds table."""
         table = self.query_one("#global-keybinds-table", DataTable)
@@ -430,12 +432,9 @@ class SettingsScreen(Screen):
             theme_select = self.query_one("#theme-select", Select)
             theme_select.value = settings.theme
             
-            # Update velocity selects
-            min_vel_select = self.query_one("#min-velocity-select", Select)
-            min_vel_select.value = settings.min_velocity
-            
-            max_vel_select = self.query_one("#max-velocity-select", Select)
-            max_vel_select.value = settings.max_velocity
+            # Update velocity inputs
+            self.query_one("#settings-min-vel-input", Input).value = str(settings.min_velocity)
+            self.query_one("#settings-max-vel-input", Input).value = str(settings.max_velocity)
             
             # Update device info
             device_info = self.query_one("#device-info", Static)
@@ -447,13 +446,30 @@ class SettingsScreen(Screen):
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press events."""
-        if event.button.id == "btn-add-global":
+        bid = event.button.id
+        if bid == "btn-add-global":
             self._add_global_keybind()
-        elif event.button.id == "btn-edit-global":
+        elif bid == "btn-edit-global":
             self._edit_global_keybind()
-        elif event.button.id == "btn-delete-global":
+        elif bid == "btn-delete-global":
             self._delete_global_keybind()
-    
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        """Handle velocity input field changes in settings."""
+        try:
+            value = int(event.input.value) if event.input.value else 1
+            value = max(1, min(127, value))
+            if event.input.id == "settings-min-vel-input":
+                self.min_velocity = value
+                if event.input.value != str(value):
+                    event.input.value = str(value)
+            elif event.input.id == "settings-max-vel-input":
+                self.max_velocity = value
+                if event.input.value != str(value):
+                    event.input.value = str(value)
+        except (ValueError, AttributeError):
+            pass
+
     def on_select_changed(self, event: Select.Changed) -> None:
         """Handle select widget changes."""
         if event.select.id == "device-select":
@@ -472,10 +488,6 @@ class SettingsScreen(Screen):
             self.auto_detect = event.value
         elif event.select.id == "theme-select":
             self.theme = event.value
-        elif event.select.id == "min-velocity-select":
-            self.min_velocity = event.value
-        elif event.select.id == "max-velocity-select":
-            self.max_velocity = event.value
 
     def on_data_table_cell_selected(self, event: DataTable.CellSelected) -> None:
         """Treat cell selection as row selection for action buttons."""
@@ -568,7 +580,14 @@ class SettingsScreen(Screen):
             self.app.config.settings.min_velocity = self.min_velocity
             self.app.config.settings.max_velocity = self.max_velocity
             self.app.config.save_settings()
-            
+
+            # Push velocity changes live so they take effect without restart
+            if hasattr(self.app, 'state_manager') and self.app.state_manager:
+                self.app.state_manager.min_velocity = self.min_velocity
+                self.app.state_manager.max_velocity = self.max_velocity
+            if hasattr(self.app, 'midi_engine') and self.app.midi_engine:
+                self.app.midi_engine.set_velocity_range(self.min_velocity, self.max_velocity)
+
             # Notify user
             self.notify("Settings saved!", title="Success", severity="information")
         

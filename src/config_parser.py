@@ -227,13 +227,13 @@ class Settings(BaseModel):
         description="Whether to auto-detect keyboard device"
     )
     min_velocity: int = Field(
-        default=100,
+        default=90,
         ge=1,
         le=127,
         description="Minimum velocity for random velocity range"
     )
     max_velocity: int = Field(
-        default=100,
+        default=115,
         ge=1,
         le=127,
         description="Maximum velocity for random velocity range"

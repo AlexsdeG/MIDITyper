@@ -9,6 +9,7 @@ This module provides the StateManager class that tracks:
 """
 
 import logging
+import random
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Callable, Dict, Optional
@@ -45,12 +46,12 @@ class StateManager:
     active_preset: Optional[Preset] = None
     
     # Velocity state
-    current_velocity: int = 100
+    current_velocity: int = 102
     velocity_step: int = 10
-    
+
     # Limits - will be clamped to 1-127 in __setattr__
-    min_velocity: int = 1
-    max_velocity: int = 127
+    min_velocity: int = 90
+    max_velocity: int = 115
     
     # Callbacks for state change notifications
     _on_state_change: Optional[Callable] = field(default=None, repr=False)
@@ -207,13 +208,22 @@ class StateManager:
     def set_velocity(self, velocity: int) -> None:
         """
         Set velocity directly.
-        
+
         Args:
             velocity: Velocity value (1-127)
         """
         self.current_velocity = max(self.min_velocity, min(self.max_velocity, velocity))
         logger.info(f"Velocity set: {self.current_velocity}")
         self._notify_state_change()
+
+    def get_playback_velocity(self) -> int:
+        """Return a random velocity within [min_velocity, max_velocity].
+
+        When min == max the fixed value is returned, giving no randomness.
+        """
+        if self.min_velocity == self.max_velocity:
+            return self.min_velocity
+        return random.randint(self.min_velocity, self.max_velocity)
 
     def set_active_preset(self, preset: Preset) -> None:
         """

@@ -14,11 +14,22 @@ the active preset configuration. Modules include:
 
 import logging
 from typing import List, Optional
+from textual import events
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical, ScrollableContainer
 from textual.reactive import reactive
 from textual.screen import Screen
-from textual.widgets import Button, Header, Footer, Static, Label, RichLog, Input, Select
+from textual.widgets import (
+    Button,
+    Header,
+    Footer,
+    Static,
+    Label,
+    RichLog,
+    Input,
+    Select,
+    ProgressBar,
+)
 from textual.binding import Binding
 from textual.message import Message
 from rich.text import Text
@@ -254,7 +265,7 @@ class PageIndicator(Static):
         self.refresh()
 
 
-class VelocitySliderSection(Static):
+class VelocitySliderSection(Vertical):
     """
     Widget containing min/max velocity controls with sliders and numeric inputs.
     
@@ -264,6 +275,7 @@ class VelocitySliderSection(Static):
     
     DEFAULT_CSS = """
     VelocitySliderSection {
+        layout: vertical;
         height: auto;
         padding: 1;
         border: solid $border;
@@ -273,6 +285,8 @@ class VelocitySliderSection(Static):
     
     VelocitySliderSection .slider-row {
         height: auto;
+        min-height: 5;
+        align: left middle;
         margin-bottom: 1;
     }
     
@@ -289,79 +303,115 @@ class VelocitySliderSection(Static):
     }
     
     VelocitySliderSection .slider-bar {
-        height: 1;
-        content-align: left middle;
-        background: $surface;
-        border: tall $border;
         width: 1fr;
+        height: 3;
+        min-height: 3;
+        margin: 0 1;
+    }
+
+    VelocitySliderSection .slider-bar > .bar {
+        height: 3;
+        min-height: 3;
+    }
+
+    VelocitySliderSection .slider-bar .bar--bar {
+        height: 3;
     }
     
     VelocitySliderSection Button {
         min-width: 3;
+        height: 3;
         margin: 0 1;
     }
     
     VelocitySliderSection Input {
-        width: 8;
+        width: 10;
     }
     """
     
-    min_velocity: reactive[int] = reactive(100)
-    max_velocity: reactive[int] = reactive(100)
-    
-    def __init__(self, min_vel: int = 100, max_vel: int = 100, **kwargs):
+    min_velocity: reactive[int] = reactive(90)
+    max_velocity: reactive[int] = reactive(115)
+
+    def __init__(self, min_vel: int = 90, max_vel: int = 115, **kwargs):
         super().__init__(**kwargs)
         self.min_velocity = min_vel
         self.max_velocity = max_vel
     
     def compose(self) -> ComposeResult:
-        """Create the velocity control layout with sliders and inputs."""
-        # Min Velocity Row
-        with Vertical(classes="slider-row"):
-            with Horizontal():
-                yield Label("Min Velocity:", classes="slider-label")
-                yield Label(str(self.min_velocity), id="min-velocity-value", classes="slider-value")
-            with Horizontal():
-                yield Button("-", id="min-velocity-dec", variant="default")
-                yield Static(self._render_slider_bar(self.min_velocity), id="min-velocity-bar", classes="slider-bar")
-                yield Button("+", id="min-velocity-inc", variant="default")
-            yield Input(str(self.min_velocity), id="min-velocity-input", type="integer", placeholder="1-127")
+        """Create the velocity control layout with sliders and editable inputs."""
+        with Horizontal(classes="slider-row"):
+            yield Label("Min Velocity:", classes="slider-label")
+            yield Button("-", id="min-velocity-dec", variant="default")
+            yield ProgressBar(
+                total=127,
+                id="min-velocity-bar",
+                classes="slider-bar",
+            )
+            yield Button("+", id="min-velocity-inc", variant="default")
+            yield Input(
+                str(self.min_velocity),
+                id="min-velocity-input",
+                type="integer",
+                placeholder="1-127",
+            )
 
-        # Max Velocity Row
-        with Vertical(classes="slider-row"):
-            with Horizontal():
-                yield Label("Max Velocity:", classes="slider-label")
-                yield Label(str(self.max_velocity), id="max-velocity-value", classes="slider-value")
-            with Horizontal():
-                yield Button("-", id="max-velocity-dec", variant="default")
-                yield Static(self._render_slider_bar(self.max_velocity), id="max-velocity-bar", classes="slider-bar")
-                yield Button("+", id="max-velocity-inc", variant="default")
-            yield Input(str(self.max_velocity), id="max-velocity-input", type="integer", placeholder="1-127")
+        with Horizontal(classes="slider-row"):
+            yield Label("Max Velocity:", classes="slider-label")
+            yield Button("-", id="max-velocity-dec", variant="default")
+            yield ProgressBar(
+                total=127,
+                id="max-velocity-bar",
+                classes="slider-bar",
+            )
+            yield Button("+", id="max-velocity-inc", variant="default")
+            yield Input(
+                str(self.max_velocity),
+                id="max-velocity-input",
+                type="integer",
+                placeholder="1-127",
+            )
     
-    def _render_slider_bar(self, value: int) -> str:
-        """Render a visual slider bar showing the velocity value."""
-        # Create a 20-character bar representing 1-127 range
-        bar_width = 20
-        filled = int((value - 1) / 126 * bar_width)
-        return "█" * filled + "░" * (bar_width - filled)
+    def _set_velocity_from_bar_click(self, bar: ProgressBar, is_min: bool, screen_x: int) -> None:
+        """Set min/max velocity based on click position inside a bar widget."""
+        bar_width = max(1, bar.region.width)
+        click_offset = max(0, min(bar_width - 1, screen_x - bar.region.x))
+        ratio = click_offset / max(1, bar_width - 1)
+        value = 1 + int(round(ratio * 126))
+
+        if is_min:
+            self.min_velocity = value
+        else:
+            self.max_velocity = value
+
+        self._update_display()
+        self.post_message(VelocityChanged(self.min_velocity, self.max_velocity))
+
+    def _resolve_progress_bar_from_widget(self, widget) -> Optional[ProgressBar]:
+        """Find the owning ProgressBar for a clicked widget (including child parts)."""
+        current = widget
+        while current is not None:
+            if isinstance(current, ProgressBar):
+                return current
+            current = getattr(current, "parent", None)
+        return None
     
     def on_mount(self) -> None:
         """Initialize the display."""
         self._update_display()
     
     def _update_display(self) -> None:
-        """Update all display elements (input, label, slider bar)."""
+        """Update all display elements (input and slider bars)."""
         try:
             # Update min velocity displays
-            self.query_one("#min-velocity-value", Label).update(str(self.min_velocity))
-            self.query_one("#min-velocity-bar", Static).update(self._render_slider_bar(self.min_velocity))
+            min_bar = self.query_one("#min-velocity-bar", ProgressBar)
+            min_bar.update(progress=self.min_velocity)
             min_input = self.query_one("#min-velocity-input", Input)
             if min_input.value != str(self.min_velocity):
                 min_input.value = str(self.min_velocity)
 
             # Update max velocity displays
-            self.query_one("#max-velocity-value", Label).update(str(self.max_velocity))
-            self.query_one("#max-velocity-bar", Static).update(self._render_slider_bar(self.max_velocity))
+            max_bar = self.query_one("#max-velocity-bar", ProgressBar)
+            max_bar.update(progress=self.max_velocity)
             max_input = self.query_one("#max-velocity-input", Input)
             if max_input.value != str(self.max_velocity):
                 max_input.value = str(self.max_velocity)
@@ -401,6 +451,17 @@ class VelocitySliderSection(Static):
         except (ValueError, AttributeError):
             # Ignore non-numeric input
             pass
+
+    def on_click(self, event: events.Click) -> None:
+        """Handle clicks on slider bars to set velocity directly."""
+        progress_bar = self._resolve_progress_bar_from_widget(event.widget)
+        if progress_bar is None:
+            return
+
+        if progress_bar.id == "min-velocity-bar":
+            self._set_velocity_from_bar_click(progress_bar, is_min=True, screen_x=event.screen_x)
+        elif progress_bar.id == "max-velocity-bar":
+            self._set_velocity_from_bar_click(progress_bar, is_min=False, screen_x=event.screen_x)
 
 
 class VelocityChanged(Message):
@@ -535,8 +596,8 @@ class CaptureScreen(Screen):
     preset_name: reactive[str] = reactive("Loading...")
     
     # Velocity range reactive properties (Step 5.2)
-    min_velocity: reactive[int] = reactive(100)
-    max_velocity: reactive[int] = reactive(100)
+    min_velocity: reactive[int] = reactive(90)
+    max_velocity: reactive[int] = reactive(115)
     
     # UI modules to render
     ui_modules: List[str] = []

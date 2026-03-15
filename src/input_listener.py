@@ -218,7 +218,7 @@ class InputListener:
             channel: MIDI channel
         """
         if is_pressed:
-            velocity = self._state_manager.current_velocity
+            velocity = self._state_manager.get_playback_velocity()
             self._midi_engine.send_note_on(note, velocity, channel)
             self._state_manager.register_note_on(note, channel)
         else:
