@@ -69,7 +69,7 @@ def test_quit_action_invokes_quit_callback() -> None:
 
 
 def test_passthrough_allows_quit_and_panic_actions() -> None:
-    """Passthrough mode should still execute QUIT and PANIC actions."""
+    """Passthrough mode should execute QUIT and PANIC shutdown actions."""
     quit_calls = {"count": 0}
 
     def on_quit() -> None:
@@ -94,7 +94,7 @@ def test_passthrough_allows_quit_and_panic_actions() -> None:
     listener._process_key_event("KEY_P", KeyEvent.KEY_DOWN)
     listener._process_key_event("KEY_A", KeyEvent.KEY_DOWN)
 
-    assert quit_calls["count"] == 1
+    assert quit_calls["count"] == 2
     assert midi.panic_calls == 1
     assert midi.note_on_calls == 0
 

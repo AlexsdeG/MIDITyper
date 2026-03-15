@@ -297,6 +297,9 @@ class InputListener:
         elif action_upper == "PANIC":
             self._midi_engine.panic()
             self._state_manager.clear_active_notes()
+            if self._on_quit is not None:
+                logger.info("PANIC action escalating to app shutdown")
+                self._on_quit()
             
         elif action_upper == "VELOCITY_UP":
             self._state_manager.velocity_up()
