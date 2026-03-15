@@ -1,8 +1,8 @@
 {
   "default_device_path": "/dev/input/event3",
   "virtual_port_name": "MIDITyper",
-  "last_used_preset": "test_synth",
-  "auto_detect_device": true,
+  "last_used_preset": "default_piano",
+  "auto_detect_device": false,
   "min_velocity": 100,
   "max_velocity": 100,
   "start_captured": true,

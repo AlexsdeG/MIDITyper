@@ -153,7 +153,15 @@ Keyboard layout definitions with key-to-MIDI mappings and action bindings.
 ```
 Add your user to the 'input' group:
   sudo usermod -aG input $USER
-Then log out and back in.
+
+Refresh group membership in your active session:
+  # preferred
+  log out and back in (or reboot)
+  # temporary in current shell
+  newgrp input
+
+Verify group is active:
+  id -nG | grep -qw input && echo "input group active"
 ```
 
 ### "No keyboard device found"

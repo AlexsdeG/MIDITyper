@@ -21,6 +21,8 @@ from textual.widgets import (
 from textual.reactive import reactive
 from textual.binding import Binding
 
+from ..input_listener import list_input_devices
+
 
 class AddGlobalMappingDialog(ModalScreen):
     """Modal dialog for adding or editing an app-global key mapping."""
@@ -340,7 +342,7 @@ class SettingsScreen(Screen):
                 for device in sorted(by_id_path.iterdir()):
                     if device.is_symlink():
                         device_name = device.name
-                        device_path = str(device.resolve())
+                        device_path = str(device)
                         options.append((device_name, device_path))
             
             # Also check /dev/input/by-path/
@@ -349,9 +351,16 @@ class SettingsScreen(Screen):
                 for device in sorted(by_path_path.iterdir()):
                     if device.is_symlink() and "event-kbd" in device.name:
                         device_name = device.name
-                        device_path = str(device.resolve())
+                        device_path = str(device)
                         if (device_name, device_path) not in options[1:]:
                             options.append((device_name, device_path))
+
+            seen_paths = {path for _, path in options}
+            for device in list_input_devices():
+                event_path = device.get("path", "")
+                if event_path and event_path not in seen_paths:
+                    options.append((f"{device.get('name', 'Unknown')} ({event_path})", event_path))
+                    seen_paths.add(event_path)
         
         except PermissionError:
             pass
@@ -456,6 +465,10 @@ class SettingsScreen(Screen):
         """Handle select widget changes."""
         if event.select.id == "device-select":
             self.device_path = event.value or ""
+            if self.device_path:
+                self.auto_detect = False
+                auto_detect_select = self.query_one("#auto-detect-select", Select)
+                auto_detect_select.value = False
         elif event.select.id == "port-select":
             if event.value == "_custom_":
                 # Prompt for custom port name (simplified - just use default for now)

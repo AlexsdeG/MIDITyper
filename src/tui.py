@@ -183,7 +183,12 @@ class KeyboardMidiApp(App):
             return False
 
         device_path = settings.default_device_path
-        if settings.auto_detect_device:
+        should_detect = settings.auto_detect_device or not device_path
+        if device_path and not Path(device_path).exists():
+            logger.warning("Saved input device path no longer exists: %s", device_path)
+            should_detect = True
+
+        if should_detect and (not device_path or not Path(device_path).exists()):
             from .input_listener import find_keyboard_device
 
             detected = find_keyboard_device()
@@ -348,11 +353,19 @@ class KeyboardMidiApp(App):
             error: The exception that occurred
         """
         logger.error(f"Device error: {error}")
-        self.notify(
-            f"Device error: {error}",
-            severity="error",
-            title="Device Error"
-        )
+        error_text = str(error)
+        if isinstance(error, PermissionError) or "Permission denied" in error_text:
+            message = (
+                "Permission denied while opening keyboard device.\n"
+                "If you've already run usermod, your current session may not include\n"
+                "the 'input' group yet. Re-login (or run 'newgrp input') and verify:\n"
+                "id -nG | grep -qw input\n"
+                "Then retry capture."
+            )
+        else:
+            message = f"Device error: {error_text}"
+
+        self.notify(message, severity="error", title="Device Error")
         
         # Pop back to main menu
         if len(self.screen_stack) > 1:
