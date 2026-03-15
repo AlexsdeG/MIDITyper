@@ -14,6 +14,8 @@ import os
 
 from pydantic import BaseModel, Field, field_validator
 
+from .action_catalog import ALLOWED_ACTIONS
+
 
 # =============================================================================
 # UI Module Types
@@ -52,31 +54,19 @@ class NoteMapping(BaseModel):
 class ActionMapping(BaseModel):
     """Mapping for a key that triggers an application action."""
     type: Literal["action"] = "action"
-    action: Literal[
-        "TOGGLE_CAPTURE",
-        "PAGE_UP",
-        "PAGE_DOWN",
-        "PANIC",
-        "VELOCITY_UP",
-        "VELOCITY_DOWN",
-        "QUIT",
-        "TRACK_SELECT_NEXT",
-        "TRACK_SELECT_PREV",
-        "TRACK_MUTE_TOGGLE",
-        "TRACK_SOLO_TOGGLE",
-        "LOOP_TOGGLE",
-        "LOOP_IN_SET",
-        "LOOP_OUT_SET",
-        "LOOP_ENABLE",
-        "LOOP_DISABLE",
-        "ZOOM_IN",
-        "ZOOM_OUT",
-        "MOVE_LEFT",
-        "MOVE_RIGHT",
-    ] = Field(
+    action: str = Field(
         ...,
         description="Action to perform"
     )
+
+    @field_validator("action")
+    @classmethod
+    def validate_action(cls, value: str) -> str:
+        """Validate action names against the shared action catalog."""
+        if value not in ALLOWED_ACTIONS:
+            allowed = ", ".join(ALLOWED_ACTIONS)
+            raise ValueError(f"Invalid action '{value}'. Allowed actions: {allowed}")
+        return value
 
 
 # Union type for key mappings

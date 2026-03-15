@@ -621,7 +621,6 @@ class CaptureScreen(Screen):
     # Key bindings
     BINDINGS = [
         Binding("escape", "back", "Back"),
-        Binding("f12", "toggle", "Toggle"),
         Binding("p", "panic", "Panic"),
         Binding("f9", "page_up", "Page Up"),
         Binding("f10", "page_down", "Page Down"),
@@ -754,6 +753,19 @@ class CaptureScreen(Screen):
         """Update the status indicator."""
         status_label = self.query_one("#status-indicator", Label)
         status_label.update(self._get_status_text())
+
+    def _update_capture_button_display(self) -> None:
+        """Update capture button label/style for current status."""
+        try:
+            capture_btn = self.query_one("#btn-capture", Button)
+            if self.status == "CAPTURING":
+                capture_btn.label = "● Capture"
+                capture_btn.remove_class("capturing")
+            else:
+                capture_btn.label = "○ Resume"
+                capture_btn.add_class("capturing")
+        except Exception:
+            pass
     
     def _configure_visualizer(self) -> None:
         """Configure the appropriate visualizer based on preset."""
@@ -861,6 +873,7 @@ class CaptureScreen(Screen):
     def action_toggle(self) -> None:
         """Toggle capture mode and synchronize input listener grab state."""
         logger.debug("CaptureScreen toggle requested from UI")
+        previous_status = self.status
         if hasattr(self.app, "toggle_capture_mode"):
             captured = self.app.toggle_capture_mode()
             self.status = "CAPTURING" if captured else "PASSTHROUGH"
@@ -868,20 +881,10 @@ class CaptureScreen(Screen):
             self.status = "PASSTHROUGH" if self.status == "CAPTURING" else "CAPTURING"
 
         self._update_status_display()
-
-        try:
-            capture_btn = self.query_one("#btn-capture", Button)
-            if self.status == "CAPTURING":
-                capture_btn.label = "● Capture"
-                capture_btn.remove_class("capturing")
-            else:
-                capture_btn.label = "○ Resume"
-                capture_btn.add_class("capturing")
-        except Exception:
-            pass
+        self._update_capture_button_display()
 
         event_log = self._get_event_log()
-        if event_log:
+        if event_log and self.status != previous_status:
             event_log.write(f"[yellow]Mode: {self.status}[/yellow]")
     
     def action_page_up(self) -> None:
@@ -1010,7 +1013,16 @@ class CaptureScreen(Screen):
         """Synchronize active notes panel from state manager."""
         state_manager = getattr(self.app, "state_manager", None)
         preset = getattr(self.app, "preset", None)
-        if not state_manager or not preset:
+        if not state_manager:
+            return
+
+        current_status = "CAPTURING" if state_manager.is_captured else "PASSTHROUGH"
+        if current_status != self.status:
+            self.status = current_status
+            self._update_status_display()
+            self._update_capture_button_display()
+
+        if not preset:
             return
 
         active = state_manager.get_active_notes()

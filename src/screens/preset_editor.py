@@ -29,6 +29,8 @@ from textual.reactive import reactive
 from textual.message import Message
 from textual.binding import Binding
 
+from ..action_catalog import get_action_select_options
+
 
 def normalize_key_name(key_input: str) -> Optional[str]:
     """
@@ -86,17 +88,6 @@ UI_MODULES = [
     ("piano_keyboard_visualizer", "Piano Keyboard Visualizer"),
     ("page_indicator", "Page Indicator"),
     ("velocity_meter", "Velocity Meter"),
-]
-
-# Available actions for mapping
-AVAILABLE_ACTIONS = [
-    "TOGGLE_CAPTURE",
-    "PAGE_UP",
-    "PAGE_DOWN",
-    "PANIC",
-    "VELOCITY_UP",
-    "VELOCITY_DOWN",
-    "QUIT",
 ]
 
 # Common MIDI notes for quick selection
@@ -244,7 +235,7 @@ class MappingEditDialog(ModalScreen):
             with Vertical(classes="dialog-row", id="action-config"):
                 yield Label("Action:", classes="dialog-label")
                 yield Select(
-                    options=[(action, action) for action in AVAILABLE_ACTIONS],
+                    options=get_action_select_options(),
                     value=self.action_value,
                     id="action-select"
                 )

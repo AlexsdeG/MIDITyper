@@ -1,14 +1,14 @@
 {
   "default_device_path": "/dev/input/event3",
   "virtual_port_name": "MIDITyper",
-  "last_used_preset": "default_piano",
+  "last_used_preset": "testsynth",
   "auto_detect_device": false,
   "min_velocity": 100,
   "max_velocity": 100,
   "start_captured": true,
   "theme": "dark",
   "app_global_mappings": {
-    "KEY_Q": {
+    "KEY_F12": {
       "type": "action",
       "action": "TOGGLE_CAPTURE"
     }

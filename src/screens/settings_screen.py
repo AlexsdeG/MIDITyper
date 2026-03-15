@@ -21,6 +21,7 @@ from textual.widgets import (
 from textual.reactive import reactive
 from textual.binding import Binding
 
+from ..action_catalog import get_action_select_options
 from ..input_listener import list_input_devices
 
 
@@ -118,28 +119,7 @@ class AddGlobalMappingDialog(ModalScreen):
             with Vertical(classes="dialog-row", id="action-config"):
                 yield Label("Action:", classes="dialog-label")
                 yield Select(
-                    options=[
-                        ("Toggle Capture", "TOGGLE_CAPTURE"),
-                        ("Page Up", "PAGE_UP"),
-                        ("Page Down", "PAGE_DOWN"),
-                        ("Panic", "PANIC"),
-                        ("Velocity Up", "VELOCITY_UP"),
-                        ("Velocity Down", "VELOCITY_DOWN"),
-                        ("Quit", "QUIT"),
-                        ("Track Select Next", "TRACK_SELECT_NEXT"),
-                        ("Track Select Previous", "TRACK_SELECT_PREV"),
-                        ("Track Mute Toggle", "TRACK_MUTE_TOGGLE"),
-                        ("Track Solo Toggle", "TRACK_SOLO_TOGGLE"),
-                        ("Loop Toggle", "LOOP_TOGGLE"),
-                        ("Set Loop In", "LOOP_IN_SET"),
-                        ("Set Loop Out", "LOOP_OUT_SET"),
-                        ("Loop Enable", "LOOP_ENABLE"),
-                        ("Loop Disable", "LOOP_DISABLE"),
-                        ("Zoom In", "ZOOM_IN"),
-                        ("Zoom Out", "ZOOM_OUT"),
-                        ("Move Left", "MOVE_LEFT"),
-                        ("Move Right", "MOVE_RIGHT"),
-                    ],
+                    options=get_action_select_options(),
                     value=self._initial_mapping.get("action", "TOGGLE_CAPTURE"),
                     id="action-select"
                 )

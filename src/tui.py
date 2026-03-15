@@ -10,6 +10,7 @@ This is the core application router that manages:
 
 import asyncio
 import logging
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -211,6 +212,7 @@ class KeyboardMidiApp(App):
                 settings=settings,
                 on_key_event=self._on_key_event,
                 on_device_error=self._on_device_error,
+                on_toggle_capture=self.toggle_capture_mode,
             )
             logger.info(f"Input listener initialized: {device_path}")
         except PermissionError:
@@ -293,6 +295,15 @@ class KeyboardMidiApp(App):
 
     def toggle_capture_mode(self) -> bool:
         """Toggle capture mode and synchronize keyboard grab state."""
+        now = time.monotonic()
+        last_toggle = getattr(self, "_last_capture_toggle_monotonic", 0.0)
+        debounce_seconds = getattr(self, "_capture_toggle_debounce_seconds", 0.2)
+
+        if now - last_toggle < debounce_seconds:
+            logger.debug("Ignoring rapid duplicate capture toggle event")
+            return self.state_manager.is_captured if self.state_manager else False
+
+        self._last_capture_toggle_monotonic = now
         current = self.state_manager.is_captured if self.state_manager else False
         return self.set_capture_mode(not current)
     

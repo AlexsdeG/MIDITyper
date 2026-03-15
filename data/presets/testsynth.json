@@ -22,7 +22,56 @@
     },
     {
       "name": "Page 2",
-      "mappings": {}
+      "mappings": {
+        "KEY_T": {
+          "type": "action",
+          "action": "PANIC"
+        },
+        "KEY_Z": {
+          "type": "action",
+          "action": "TRACK_SELECT_NEXT"
+        },
+        "KEY_H": {
+          "type": "action",
+          "action": "TRACK_SELECT_PREV"
+        },
+        "KEY_M": {
+          "type": "action",
+          "action": "TRACK_MUTE_TOGGLE"
+        },
+        "KEY_N": {
+          "type": "action",
+          "action": "TRACK_SOLO_TOGGLE"
+        },
+        "KEY_L": {
+          "type": "action",
+          "action": "LOOP_TOGGLE"
+        },
+        "KEY_I": {
+          "type": "action",
+          "action": "LOOP_IN_SET"
+        },
+        "KEY_O": {
+          "type": "action",
+          "action": "ZOOM_OUT"
+        },
+        "KEY_F": {
+          "type": "action",
+          "action": "ZOOM_IN"
+        },
+        "KEY_V": {
+          "type": "action",
+          "action": "ZOOM_OUT"
+        },
+        "KEY_G": {
+          "type": "action",
+          "action": "MOVE_LEFT"
+        },
+        "KEY_J": {
+          "type": "action",
+          "action": "MOVE_RIGHT"
+        }
+      }
     }
   ],
   "global_actions": {

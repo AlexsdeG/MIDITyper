@@ -54,7 +54,8 @@ class InputListener:
         midi_engine: MidiEngine,
         settings: Optional[Settings] = None,
         on_key_event: Optional[Callable[[str, bool], None]] = None,
-        on_device_error: Optional[Callable[[Exception], None]] = None
+        on_device_error: Optional[Callable[[Exception], None]] = None,
+        on_toggle_capture: Optional[Callable[[], bool]] = None,
     ):
         """
         Initialize the input listener.
@@ -66,6 +67,7 @@ class InputListener:
             settings: Settings instance for app-global mappings (optional)
             on_key_event: Optional callback for key events (key_name, is_pressed)
             on_device_error: Optional callback for device errors
+            on_toggle_capture: Optional callback to toggle capture mode via app
         """
         self._device_path = device_path
         self._state_manager = state_manager
@@ -73,6 +75,7 @@ class InputListener:
         self._settings = settings
         self._on_key_event = on_key_event
         self._on_device_error = on_device_error
+        self._on_toggle_capture = on_toggle_capture
         
         self._device: Optional[InputDevice] = None
         self._running = False
@@ -235,9 +238,13 @@ class InputListener:
         action_upper = action.upper()
         
         if action_upper == "TOGGLE_CAPTURE":
-            self._state_manager.toggle_capture()
-            if not self._update_grab_state():
-                logger.warning("Capture toggle requested but device grab failed")
+            if self._on_toggle_capture is not None:
+                captured = self._on_toggle_capture()
+                logger.debug("Capture toggled via app callback. Captured=%s", captured)
+            else:
+                self._state_manager.toggle_capture()
+                if not self._update_grab_state():
+                    logger.warning("Capture toggle requested but device grab failed")
             
         elif action_upper == "PAGE_UP":
             self._state_manager.next_page()
