@@ -56,6 +56,7 @@ class InputListener:
         on_key_event: Optional[Callable[[str, bool], None]] = None,
         on_device_error: Optional[Callable[[Exception], None]] = None,
         on_toggle_capture: Optional[Callable[[], bool]] = None,
+        on_quit: Optional[Callable[[], None]] = None,
     ):
         """
         Initialize the input listener.
@@ -68,6 +69,7 @@ class InputListener:
             on_key_event: Optional callback for key events (key_name, is_pressed)
             on_device_error: Optional callback for device errors
             on_toggle_capture: Optional callback to toggle capture mode via app
+            on_quit: Optional callback to trigger app shutdown
         """
         self._device_path = device_path
         self._state_manager = state_manager
@@ -76,6 +78,7 @@ class InputListener:
         self._on_key_event = on_key_event
         self._on_device_error = on_device_error
         self._on_toggle_capture = on_toggle_capture
+        self._on_quit = on_quit
         
         self._device: Optional[InputDevice] = None
         self._running = False
@@ -86,6 +89,45 @@ class InputListener:
         
         # Track if device was grabbed
         self._is_grabbed = False
+        self._ctrl_keys_held: set[str] = set()
+
+    @staticmethod
+    def _is_ctrl_key(keycode: str) -> bool:
+        """Return True when keycode is a Ctrl modifier key."""
+        return keycode in {"KEY_LEFTCTRL", "KEY_RIGHTCTRL"}
+
+    def _update_modifier_state(self, keycode: str, event_value: int) -> None:
+        """Track currently held Ctrl keys for Ctrl+Q handling."""
+        if not self._is_ctrl_key(keycode):
+            return
+
+        if event_value in {KeyEvent.KEY_DOWN, KeyEvent.KEY_HOLD}:
+            self._ctrl_keys_held.add(keycode)
+        elif event_value == KeyEvent.KEY_UP:
+            self._ctrl_keys_held.discard(keycode)
+
+    def _is_ctrl_held(self) -> bool:
+        """Return True when at least one Ctrl key is currently pressed."""
+        return bool(self._ctrl_keys_held)
+
+    def _handle_global_shortcuts(self, keycode: str, event_value: int) -> bool:
+        """Handle always-available shortcuts before mapping resolution.
+
+        Returns:
+            True if the key event is fully handled and should not continue.
+        """
+        if (
+            event_value == KeyEvent.KEY_DOWN
+            and keycode == "KEY_Q"
+            and self._is_ctrl_held()
+            and self._state_manager.is_captured
+        ):
+            logger.info("Ctrl+Q detected during capture; triggering quit")
+            if self._on_quit is not None:
+                self._on_quit()
+            return True
+
+        return False
 
     @property
     def device_path(self) -> str:
@@ -263,8 +305,9 @@ class InputListener:
             self._state_manager.velocity_down()
             
         elif action_upper == "QUIT":
-            # Signal app to quit (handled by callback)
             logger.info("QUIT action triggered")
+            if self._on_quit is not None:
+                self._on_quit()
 
         elif action_upper in {
             "TRACK_SELECT_NEXT",
@@ -313,12 +356,19 @@ class InputListener:
             return
 
         # In passthrough mode, ignore note/action processing so keys behave normally
-        # in other applications. Allow only TOGGLE_CAPTURE on key down so capture can
-        # be resumed from the keyboard.
+        # in other applications. Keep critical safety actions available on key down.
         if not self._state_manager.is_captured:
             if is_pressed:
                 action = self._resolve_action_for_key(keycode, preset)
-                if action == "TOGGLE_CAPTURE":
+                if action in {
+                    "TOGGLE_CAPTURE",
+                    "PANIC",
+                    "QUIT",
+                    "PAGE_UP",
+                    "PAGE_DOWN",
+                    "VELOCITY_UP",
+                    "VELOCITY_DOWN",
+                }:
                     self._handle_action(action)
             return
 
@@ -441,6 +491,11 @@ class InputListener:
                 # Get keycode name
                 keycode = self._get_keycode_name(event.code)
                 if not keycode:
+                    continue
+
+                self._update_modifier_state(keycode, event.value)
+
+                if self._handle_global_shortcuts(keycode, event.value):
                     continue
 
                 # Process the key event

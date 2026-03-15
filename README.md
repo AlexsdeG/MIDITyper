@@ -150,17 +150,17 @@ Keyboard layout definitions with key-to-MIDI mappings and action bindings.
 ## Troubleshooting
 
 ### "Permission denied" error
-```
-Add your user to the 'input' group:
+```bash
+# Add your user to the 'input' group:
   sudo usermod -aG input $USER
 
-Refresh group membership in your active session:
+# Refresh group membership in your active session:
   # preferred
-  log out and back in (or reboot)
+  # log out and back in (or reboot)
   # temporary in current shell
   newgrp input
 
-Verify group is active:
+# Verify group is active:
   id -nG | grep -qw input && echo "input group active"
 ```
 

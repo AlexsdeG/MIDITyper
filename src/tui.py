@@ -72,6 +72,7 @@ class KeyboardMidiApp(App):
     state_manager: Optional[StateManager] = None
     input_listener: Optional[InputListener] = None
     _input_task: Optional[asyncio.Task] = None
+    _shutdown_in_progress: bool = False
     
     def __init__(
         self,
@@ -100,24 +101,81 @@ class KeyboardMidiApp(App):
         self._cleanup_resources()
     
     def _cleanup_resources(self) -> None:
-        """Clean up all resources."""
-        # Stop input listener
+        """Final synchronous resource cleanup used during app unmount."""
         if self._input_task:
             self._input_task.cancel()
             self._input_task = None
-        
-        # Close MIDI engine
+
+        if self.input_listener:
+            self.input_listener = None
+
         if self.midi_engine:
             self.midi_engine.close()
             self.midi_engine = None
-    
+
+    async def _shutdown_capture_path(self) -> None:
+        """Stop capture safely and release grabbed keyboard state."""
+        self.set_capture_mode(False)
+
+        if self.midi_engine:
+            self.midi_engine.panic()
+
+        if self.input_listener:
+            await self.stop_capture()
+
+    async def shutdown_to_main_menu(self) -> None:
+        """Shutdown capture and return to main menu safely."""
+        if self._shutdown_in_progress:
+            logger.debug("Shutdown already in progress; ignoring duplicate request")
+            return
+
+        self._shutdown_in_progress = True
+        try:
+            await self._shutdown_capture_path()
+            if len(self.screen_stack) > 1:
+                self.pop_screen()
+            else:
+                self.switch_screen("main_menu")
+        finally:
+            self._shutdown_in_progress = False
+
+    async def shutdown_and_exit(self) -> None:
+        """Shutdown capture/resources and exit application."""
+        if self._shutdown_in_progress:
+            logger.debug("Shutdown already in progress; ignoring duplicate request")
+            return
+
+        self._shutdown_in_progress = True
+        try:
+            await self._shutdown_capture_path()
+            self.exit()
+        finally:
+            self._shutdown_in_progress = False
+
     def action_quit(self) -> None:
-        """Quit the application."""
-        self._cleanup_resources()
-        self.exit()
+        """Queue an orderly async shutdown and exit."""
+        self.run_worker(
+            self.shutdown_and_exit(),
+            name="shutdown_and_exit",
+            group="shutdown",
+            exclusive=True,
+        )
+
+    def request_quit_from_listener(self) -> None:
+        """Allow listener callbacks to trigger the same quit flow."""
+        self.action_quit()
     
     def action_back(self) -> None:
         """Go back to previous screen."""
+        if isinstance(self.screen, CaptureScreen):
+            self.run_worker(
+                self.shutdown_to_main_menu(),
+                name="shutdown_to_main_menu",
+                group="shutdown",
+                exclusive=True,
+            )
+            return
+
         if len(self.screen_stack) > 1:
             self.pop_screen()
         else:
@@ -213,6 +271,7 @@ class KeyboardMidiApp(App):
                 on_key_event=self._on_key_event,
                 on_device_error=self._on_device_error,
                 on_toggle_capture=self.toggle_capture_mode,
+                on_quit=self.request_quit_from_listener,
             )
             logger.info(f"Input listener initialized: {device_path}")
         except PermissionError:

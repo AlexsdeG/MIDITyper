@@ -681,7 +681,7 @@ class CaptureScreen(Screen):
     
     # Key bindings
     BINDINGS = [
-        Binding("escape", "back", "Back"),
+        Binding("ctrl+b", "back", "Back"),
         Binding("p", "panic", "Panic"),
         Binding("f9", "page_up", "Page Up"),
         Binding("f10", "page_down", "Page Down"),
@@ -820,10 +820,10 @@ class CaptureScreen(Screen):
         try:
             capture_btn = self.query_one("#btn-capture", Button)
             if self.status == "CAPTURING":
-                capture_btn.label = "● Capture"
+                capture_btn.label = "● Capturing"
                 capture_btn.remove_class("capturing")
             else:
-                capture_btn.label = "○ Resume"
+                capture_btn.label = "○ Stopped"
                 capture_btn.add_class("capturing")
         except Exception:
             pass
@@ -999,7 +999,8 @@ class CaptureScreen(Screen):
     
     async def _kill_app(self) -> None:
         """Kill the application safely."""
-        await self._cleanup_and_exit()
+        if hasattr(self.app, "shutdown_and_exit"):
+            await self.app.shutdown_and_exit()
 
     async def _cleanup_and_exit(self) -> None:
         """Clean up and return to main menu with capture disabled."""
@@ -1011,21 +1012,8 @@ class CaptureScreen(Screen):
         logger.info("CaptureScreen cleanup started")
 
         try:
-            # First force passthrough state to avoid stale capture state during teardown.
-            if hasattr(self.app, "set_capture_mode"):
-                self.app.set_capture_mode(False)
-
-            if hasattr(self.app, "midi_engine") and self.app.midi_engine:
-                self.app.midi_engine.panic()
-
-            if hasattr(self.app, "stop_capture"):
-                await self.app.stop_capture()
-
-            logger.info("CaptureScreen cleanup complete, returning to main menu")
-            if len(self.app.screen_stack) > 1:
-                self.app.pop_screen()
-            else:
-                self.app.switch_screen("main_menu")
+            if hasattr(self.app, "shutdown_to_main_menu"):
+                await self.app.shutdown_to_main_menu()
         finally:
             self._is_exiting = False
     
@@ -1086,6 +1074,10 @@ class CaptureScreen(Screen):
         if not preset:
             return
 
+        if self.current_page != state_manager.current_page_index:
+            self.current_page = state_manager.current_page_index
+            self._update_page_display()
+
         active = state_manager.get_active_notes()
         page = preset.get_page(state_manager.current_page_index)
         note_names: List[str] = []
@@ -1094,6 +1086,21 @@ class CaptureScreen(Screen):
                 match = next((m.name for m in page.mappings.values() if m.note == note), None)
                 note_names.append(match or str(note))
         self.update_active_notes(len(active), note_names)
+
+        if not active:
+            try:
+                drum_viz = self.query_one("#drum-pad-viz", DrumPadVisualizer)
+                drum_viz._active_pads.clear()
+                drum_viz.refresh()
+            except Exception:
+                pass
+
+            try:
+                piano_viz = self.query_one("#piano-viz", PianoKeyboardVisualizer)
+                piano_viz._active_keys.clear()
+                piano_viz.refresh()
+            except Exception:
+                pass
 
     def update_active_notes(self, count: int, notes: List[str] = None) -> None:
         """

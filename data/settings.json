@@ -11,6 +11,18 @@
     "KEY_F12": {
       "type": "action",
       "action": "TOGGLE_CAPTURE"
+    },
+    "KEY_ESC": {
+      "type": "action",
+      "action": "PANIC"
+    },
+    "KEY_F9": {
+      "type": "action",
+      "action": "PAGE_UP"
+    },
+    "KEY_F10": {
+      "type": "action",
+      "action": "PAGE_DOWN"
     }
   }
 }
