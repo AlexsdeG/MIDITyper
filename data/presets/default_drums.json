@@ -9,15 +9,20 @@
     {
       "name": "Drum Kit",
       "mappings": {
+        "KEY_102ND": {
+          "type": "note",
+          "note": 43,
+          "name": "Hand Clap"
+        },
         "KEY_Z": {
           "type": "note",
-          "note": 36,
-          "name": "Kick"
+          "note": 37,
+          "name": "Side Stick"
         },
         "KEY_X": {
           "type": "note",
-          "note": 38,
-          "name": "Snare"
+          "note": 36,
+          "name": "Kick"
         },
         "KEY_C": {
           "type": "note",
@@ -26,73 +31,73 @@
         },
         "KEY_V": {
           "type": "note",
-          "note": 46,
-          "name": "HH Open"
+          "note": 39,
+          "name": "Hand Clap"
         },
         "KEY_A": {
           "type": "note",
-          "note": 43,
-          "name": "Tom Low"
+          "note": 38,
+          "name": "Snare 1"
         },
         "KEY_S": {
-          "type": "note",
-          "note": 47,
-          "name": "Tom Mid"
-        },
-        "KEY_D": {
-          "type": "note",
-          "note": 50,
-          "name": "Tom High"
-        },
-        "KEY_F": {
-          "type": "note",
-          "note": 49,
-          "name": "Crash"
-        },
-        "KEY_Q": {
-          "type": "note",
-          "note": 51,
-          "name": "Ride"
-        },
-        "KEY_W": {
           "type": "note",
           "note": 56,
           "name": "Cowbell"
         },
+        "KEY_D": {
+          "type": "note",
+          "note": 46,
+          "name": "HH Open"
+        },
+        "KEY_F": {
+          "type": "note",
+          "note": 64,
+          "name": "Conga Low"
+        },
+        "KEY_Q": {
+          "type": "note",
+          "note": 50,
+          "name": "High Tom"
+        },
+        "KEY_W": {
+          "type": "note",
+          "note": 48,
+          "name": "Mid Tom"
+        },
+        "KEY_E": {
+          "type": "note",
+          "note": 45,
+          "name": "Low Tom"
+        },
         "KEY_R": {
           "type": "note",
-          "note": 35,
-          "name": "Kick 2"
+          "note": 62,
+          "name": "Conga Mid"
         },
         "KEY_1": {
           "type": "note",
-          "note": 40,
-          "name": "Snare 2"
+          "note": 49,
+          "name": "Crash 1"
         },
         "KEY_2": {
           "type": "note",
-          "note": 44,
-          "name": "HH Pedal"
+          "note": 75,
+          "name": "Claves"
         },
         "KEY_3": {
           "type": "note",
-          "note": 54,
-          "name": "Tambourine"
+          "note": 70,
+          "name": "Maracas"
         },
         "KEY_4": {
           "type": "note",
-          "note": 53,
-          "name": "Ride Bell"
+          "note": 63,
+          "name": "Conga High"
         },
         "KEY_5": {
           "type": "note",
-          "note": 37,
+          "note": 44,
           "name": "Side Stick"
-        },
-        "KEY_102ND": {
-          "type": "note",
-          "note": 39,
-          "name": "Hand Clap"
         }
       }
     }

@@ -1,7 +1,7 @@
 {
   "default_device_path": "/dev/input/event3",
   "virtual_port_name": "MIDITyper",
-  "last_used_preset": "default_drums",
+  "last_used_preset": "default_piano",
   "auto_detect_device": false,
   "min_velocity": 90,
   "max_velocity": 115,
