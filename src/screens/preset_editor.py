@@ -657,8 +657,11 @@ class PresetEditorScreen(Screen):
     def on_select_changed(self, event: Select.Changed) -> None:
         """Handle select widget changes."""
         if event.select.id == "preset-select":
-            if event.value:
-                self._load_preset(event.value)
+            if not isinstance(event.value, str):
+                return
+            if not event.value:
+                return
+            self._load_preset(event.value)
     
     def on_input_changed(self, event: Input.Changed) -> None:
         """Handle input widget changes."""
@@ -1235,6 +1238,7 @@ class PresetEditorScreen(Screen):
             # Refresh preset select options
             preset_select = self.query_one("#preset-select", Select)
             preset_select.set_options(self._get_preset_options())
+            preset_select.value = filename
             
         except Exception as e:
             self.notify(f"Failed to save: {e}", severity="error")

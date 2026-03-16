@@ -14,11 +14,6 @@
           "note": 60,
           "name": "C4"
         },
-        "KEY_APOSTROPHE": {
-          "type": "note",
-          "note": 61,
-          "name": "D4"
-        },
         "KEY_SEMICOLON": {
           "type": "note",
           "note": 62,
