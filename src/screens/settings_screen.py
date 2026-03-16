@@ -227,6 +227,7 @@ class SettingsScreen(Screen):
     device_path: reactive[str] = reactive("")
     port_name: reactive[str] = reactive("MIDITyper")
     auto_detect: reactive[bool] = reactive(True)
+    caps_lock_capture_toggle_enabled: reactive[bool] = reactive(True)
     theme: reactive[str] = reactive("dark")
     min_velocity: reactive[int] = reactive(90)
     max_velocity: reactive[int] = reactive(115)
@@ -286,6 +287,19 @@ class SettingsScreen(Screen):
                             options=[("Dark", "dark"), ("Light", "light")],
                             value="dark",
                             id="theme-select",
+                            classes="setting-widget"
+                        )
+
+                    # Caps Lock global capture toggle
+                    with Container(classes="setting-row"):
+                        yield Label("Caps Lock Capture Toggle:", classes="setting-label")
+                        yield Select(
+                            options=[
+                                ("Enabled", True),
+                                ("Disabled", False),
+                            ],
+                            value=True,
+                            id="caps-lock-toggle-select",
                             classes="setting-widget"
                         )
                     
@@ -407,6 +421,9 @@ class SettingsScreen(Screen):
             settings = self.app.config.settings
             self.port_name = settings.virtual_port_name
             self.auto_detect = settings.auto_detect_device
+            self.caps_lock_capture_toggle_enabled = (
+                settings.caps_lock_capture_toggle_enabled
+            )
             self.theme = settings.theme
             self.min_velocity = settings.min_velocity
             self.max_velocity = settings.max_velocity
@@ -436,6 +453,14 @@ class SettingsScreen(Screen):
             # Update theme select
             theme_select = self.query_one("#theme-select", Select)
             theme_select.value = settings.theme
+
+            # Update caps lock toggle select
+            caps_lock_toggle_select = self.query_one(
+                "#caps-lock-toggle-select", Select
+            )
+            caps_lock_toggle_select.value = (
+                settings.caps_lock_capture_toggle_enabled
+            )
             
             # Update velocity inputs
             self.query_one("#settings-min-vel-input", Input).value = str(settings.min_velocity)
@@ -493,6 +518,8 @@ class SettingsScreen(Screen):
             self.auto_detect = event.value
         elif event.select.id == "theme-select":
             self.theme = event.value
+        elif event.select.id == "caps-lock-toggle-select":
+            self.caps_lock_capture_toggle_enabled = event.value
 
     def on_data_table_cell_selected(self, event: DataTable.CellSelected) -> None:
         """Treat cell selection as row selection for action buttons."""
@@ -633,6 +660,9 @@ class SettingsScreen(Screen):
             self.app.config.settings.default_device_path = self.device_path
             self.app.config.settings.virtual_port_name = self.port_name
             self.app.config.settings.auto_detect_device = self.auto_detect
+            self.app.config.settings.caps_lock_capture_toggle_enabled = (
+                self.caps_lock_capture_toggle_enabled
+            )
             self.app.config.settings.theme = self.theme
             self.app.config.settings.min_velocity = self.min_velocity
             self.app.config.settings.max_velocity = self.max_velocity

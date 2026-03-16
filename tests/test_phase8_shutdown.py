@@ -3,7 +3,9 @@
 import asyncio
 from types import SimpleNamespace
 
-from src.config_parser import ActionMapping, NoteMapping, Page, Preset
+from evdev import ecodes
+
+from src.config_parser import ActionMapping, NoteMapping, Page, Preset, Settings
 from src.input_listener import InputListener, KeyEvent
 from src.screens.capture_screen import CaptureScreen
 from src.state_manager import StateManager
@@ -150,6 +152,83 @@ def test_ctrl_q_shortcut_triggers_quit_only_while_captured() -> None:
     handled = listener._handle_global_shortcuts("KEY_Q", KeyEvent.KEY_DOWN)
     assert handled is False
     assert quit_calls["count"] == 1
+
+
+def test_caps_lock_shortcut_triggers_capture_toggle() -> None:
+    """Caps Lock should always act as a capture toggle shortcut."""
+    toggle_calls = {"count": 0}
+
+    def on_toggle_capture() -> bool:
+        toggle_calls["count"] += 1
+        return True
+
+    state = _build_state(False, {})
+    midi = DummyMidiEngine()
+    listener = InputListener(
+        device_path="/dev/input/event0",
+        state_manager=state,
+        midi_engine=midi,
+        on_toggle_capture=on_toggle_capture,
+    )
+
+    handled = listener._handle_global_shortcuts("KEY_CAPSLOCK", KeyEvent.KEY_DOWN)
+
+    assert handled is True
+    assert toggle_calls["count"] == 1
+
+
+def test_caps_lock_shortcut_respects_disabled_setting() -> None:
+    """Caps Lock shortcut should be disabled when setting is false."""
+    toggle_calls = {"count": 0}
+
+    def on_toggle_capture() -> bool:
+        toggle_calls["count"] += 1
+        return True
+
+    state = _build_state(False, {})
+    midi = DummyMidiEngine()
+    settings = Settings(caps_lock_capture_toggle_enabled=False)
+    listener = InputListener(
+        device_path="/dev/input/event0",
+        state_manager=state,
+        midi_engine=midi,
+        settings=settings,
+        on_toggle_capture=on_toggle_capture,
+    )
+
+    handled = listener._handle_global_shortcuts("KEY_CAPSLOCK", KeyEvent.KEY_DOWN)
+
+    assert handled is False
+    assert toggle_calls["count"] == 0
+
+
+def test_update_grab_state_syncs_caps_lock_led() -> None:
+    """Capture state sync should update Caps Lock LED on/off."""
+
+    class DummyDevice:
+        def __init__(self) -> None:
+            self.calls: list[tuple[int, int]] = []
+
+        def set_led(self, led_code: int, value: int) -> None:
+            self.calls.append((led_code, value))
+
+    state = _build_state(False, {})
+    midi = DummyMidiEngine()
+    listener = InputListener(
+        device_path="/dev/input/event0",
+        state_manager=state,
+        midi_engine=midi,
+    )
+
+    device = DummyDevice()
+    listener._device = device
+    listener._is_grabbed = True
+    listener._ungrab_device = lambda: None  # type: ignore[method-assign]
+    listener._send_all_notes_off = lambda: None  # type: ignore[method-assign]
+
+    listener._update_grab_state()
+
+    assert (ecodes.LED_CAPSL, 0) in device.calls
 
 
 def test_capture_back_cleanup_uses_shared_app_shutdown() -> None:

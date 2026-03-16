@@ -118,6 +118,15 @@ class InputListener:
         """
         if (
             event_value == KeyEvent.KEY_DOWN
+            and keycode == "KEY_CAPSLOCK"
+            and self._is_caps_lock_toggle_enabled()
+        ):
+            logger.info("Caps Lock detected; toggling capture mode")
+            self._handle_action("TOGGLE_CAPTURE")
+            return True
+
+        if (
+            event_value == KeyEvent.KEY_DOWN
             and keycode == "KEY_Q"
             and self._is_ctrl_held()
             and self._state_manager.is_captured
@@ -128,6 +137,12 @@ class InputListener:
             return True
 
         return False
+
+    def _is_caps_lock_toggle_enabled(self) -> bool:
+        """Return whether Caps Lock should act as global capture toggle."""
+        if self._settings is None:
+            return True
+        return bool(self._settings.caps_lock_capture_toggle_enabled)
 
     @property
     def device_path(self) -> str:
@@ -215,12 +230,41 @@ class InputListener:
             True if requested mode is successfully applied.
         """
         if self._state_manager.is_captured:
-            return self._grab_device()
+            grabbed = self._grab_device()
+            if grabbed:
+                self._set_caps_lock_led(True)
+            return grabbed
 
         # Send Note Off for all active notes before ungrabbing
         self._send_all_notes_off()
         self._ungrab_device()
+        self._set_caps_lock_led(False)
         return True
+
+    def _set_caps_lock_led(self, enabled: bool) -> None:
+        """Set Caps Lock LED state on the active input device.
+
+        Args:
+            enabled: True to light LED, False to turn it off.
+        """
+        if not self._device:
+            return
+
+        value = 1 if enabled else 0
+
+        try:
+            self._device.set_led(ecodes.LED_CAPSL, value)
+            return
+        except AttributeError:
+            pass
+        except OSError as error:
+            logger.debug("Could not set Caps Lock LED via set_led: %s", error)
+
+        try:
+            self._device.write(ecodes.EV_LED, ecodes.LED_CAPSL, value)
+            self._device.syn()
+        except OSError as error:
+            logger.debug("Could not set Caps Lock LED via EV_LED write: %s", error)
 
     def _send_all_notes_off(self) -> None:
         """Send Note Off for all tracked active notes."""
@@ -477,6 +521,7 @@ class InputListener:
                     self._last_start_error
                     or "Capture requested, but keyboard grab failed"
                 )
+            self._set_caps_lock_led(self._state_manager.is_captured)
             
             self._running = True
             logger.info(f"Started listening to {self._device.name}")
@@ -529,6 +574,8 @@ class InputListener:
     def _cleanup(self) -> None:
         """Clean up resources."""
         self._running = False
+
+        self._set_caps_lock_led(False)
         
         # Ungrab device if grabbed
         if self._is_grabbed:

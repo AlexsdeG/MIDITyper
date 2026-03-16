@@ -6,6 +6,7 @@
   "min_velocity": 90,
   "max_velocity": 115,
   "start_captured": true,
+  "caps_lock_capture_toggle_enabled": true,
   "theme": "dark",
   "app_global_mappings": {
     "KEY_F12": {

@@ -242,6 +242,10 @@ class Settings(BaseModel):
         default=True,
         description="Whether to start in capture mode"
     )
+    caps_lock_capture_toggle_enabled: bool = Field(
+        default=True,
+        description="Whether Caps Lock toggles capture mode globally"
+    )
     theme: Literal["dark", "light"] = Field(
         default="dark",
         description="UI theme"
