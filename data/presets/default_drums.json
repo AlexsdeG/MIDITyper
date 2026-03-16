@@ -1,33 +1,111 @@
 {
   "name": "Default Drums",
   "description": "GM Drum Map layout for Numpad drumming - standard General MIDI percussion",
-  "ui_modules": ["drum_pad_visualizer", "event_log"],
+  "ui_modules": [
+    "drum_pad_visualizer",
+    "event_log"
+  ],
   "pages": [
     {
       "name": "Drum Kit",
       "mappings": {
-        "KEY_KP0": {"type": "note", "note": 36, "name": "Kick"},
-        "KEY_KP5": {"type": "note", "note": 38, "name": "Snare"},
-        "KEY_KP4": {"type": "note", "note": 42, "name": "HH Closed"},
-        "KEY_KP6": {"type": "note", "note": 46, "name": "HH Open"},
-        "KEY_KP7": {"type": "note", "note": 43, "name": "Tom Low"},
-        "KEY_KP8": {"type": "note", "note": 47, "name": "Tom Mid"},
-        "KEY_KP9": {"type": "note", "note": 50, "name": "Tom High"},
-        "KEY_KPASTERISK": {"type": "note", "note": 49, "name": "Crash"},
-        "KEY_KPMINUS": {"type": "note", "note": 51, "name": "Ride"},
-        "KEY_KPPLUS": {"type": "note", "note": 56, "name": "Cowbell"},
-        "KEY_KP1": {"type": "note", "note": 35, "name": "Kick 2"},
-        "KEY_KP2": {"type": "note", "note": 40, "name": "Snare 2"},
-        "KEY_KP3": {"type": "note", "note": 44, "name": "HH Pedal"},
-        "KEY_KPDOT": {"type": "note", "note": 54, "name": "Tambourine"},
-        "KEY_KPSLASH": {"type": "note", "note": 53, "name": "Ride Bell"},
-        "KEY_KPCOMMA": {"type": "note", "note": 37, "name": "Side Stick"},
-        "KEY_KPENTER": {"type": "note", "note": 39, "name": "Hand Clap"}
+        "KEY_Z": {
+          "type": "note",
+          "note": 36,
+          "name": "Kick"
+        },
+        "KEY_X": {
+          "type": "note",
+          "note": 38,
+          "name": "Snare"
+        },
+        "KEY_C": {
+          "type": "note",
+          "note": 42,
+          "name": "HH Closed"
+        },
+        "KEY_V": {
+          "type": "note",
+          "note": 46,
+          "name": "HH Open"
+        },
+        "KEY_A": {
+          "type": "note",
+          "note": 43,
+          "name": "Tom Low"
+        },
+        "KEY_S": {
+          "type": "note",
+          "note": 47,
+          "name": "Tom Mid"
+        },
+        "KEY_D": {
+          "type": "note",
+          "note": 50,
+          "name": "Tom High"
+        },
+        "KEY_F": {
+          "type": "note",
+          "note": 49,
+          "name": "Crash"
+        },
+        "KEY_Q": {
+          "type": "note",
+          "note": 51,
+          "name": "Ride"
+        },
+        "KEY_W": {
+          "type": "note",
+          "note": 56,
+          "name": "Cowbell"
+        },
+        "KEY_R": {
+          "type": "note",
+          "note": 35,
+          "name": "Kick 2"
+        },
+        "KEY_1": {
+          "type": "note",
+          "note": 40,
+          "name": "Snare 2"
+        },
+        "KEY_2": {
+          "type": "note",
+          "note": 44,
+          "name": "HH Pedal"
+        },
+        "KEY_3": {
+          "type": "note",
+          "note": 54,
+          "name": "Tambourine"
+        },
+        "KEY_4": {
+          "type": "note",
+          "note": 53,
+          "name": "Ride Bell"
+        },
+        "KEY_5": {
+          "type": "note",
+          "note": 37,
+          "name": "Side Stick"
+        },
+        "KEY_102ND": {
+          "type": "note",
+          "note": 39,
+          "name": "Hand Clap"
+        }
       }
     }
   ],
   "global_actions": {
-    "KEY_F12": {"type": "action", "action": "TOGGLE_CAPTURE"},
-    "KEY_ESC": {"type": "action", "action": "PANIC"}
-  }
+    "KEY_F12": {
+      "type": "action",
+      "action": "TOGGLE_CAPTURE"
+    },
+    "KEY_ESC": {
+      "type": "action",
+      "action": "PANIC"
+    }
+  },
+  "global_mappings": {}
 }
