@@ -231,6 +231,28 @@ def test_update_grab_state_syncs_caps_lock_led() -> None:
     assert (ecodes.LED_CAPSL, 0) in device.calls
 
 
+def test_update_grab_state_forces_system_caps_lock_off() -> None:
+    """Passthrough sync should call system Caps Lock reset hook."""
+    state = _build_state(False, {})
+    midi = DummyMidiEngine()
+    listener = InputListener(
+        device_path="/dev/input/event0",
+        state_manager=state,
+        midi_engine=midi,
+    )
+
+    calls = {"count": 0}
+    listener._force_system_caps_lock_off = (  # type: ignore[method-assign]
+        lambda: calls.__setitem__("count", calls["count"] + 1)
+    )
+    listener._ungrab_device = lambda: None  # type: ignore[method-assign]
+    listener._send_all_notes_off = lambda: None  # type: ignore[method-assign]
+
+    listener._update_grab_state()
+
+    assert calls["count"] == 1
+
+
 def test_capture_back_cleanup_uses_shared_app_shutdown() -> None:
     """Capture back flow should call shared shutdown-to-menu handler."""
     calls = {"count": 0}

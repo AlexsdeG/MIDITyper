@@ -11,6 +11,7 @@ This module provides asynchronous keyboard capture functionality:
 
 import asyncio
 import logging
+import subprocess
 from enum import IntEnum
 from typing import Callable, Optional, TYPE_CHECKING
 
@@ -239,6 +240,7 @@ class InputListener:
         self._send_all_notes_off()
         self._ungrab_device()
         self._set_caps_lock_led(False)
+        self._force_system_caps_lock_off()
         return True
 
     def _set_caps_lock_led(self, enabled: bool) -> None:
@@ -265,6 +267,44 @@ class InputListener:
             self._device.syn()
         except OSError as error:
             logger.debug("Could not set Caps Lock LED via EV_LED write: %s", error)
+
+    def _force_system_caps_lock_off(self) -> None:
+        """Best-effort system-wide Caps Lock reset.
+
+        This ensures keyboard input remains lowercase when capture is disabled.
+        The operation is intentionally non-fatal and will silently degrade when
+        X11/Wayland helpers are unavailable.
+        """
+        try:
+            xset_query = subprocess.run(
+                ["xset", "q"],
+                capture_output=True,
+                text=True,
+                timeout=1.5,
+                check=False,
+            )
+        except Exception as error:
+            logger.debug("Skipping system Caps Lock reset (xset unavailable): %s", error)
+            return
+
+        output = f"{xset_query.stdout}\n{xset_query.stderr}".lower()
+        if "caps lock:" not in output:
+            return
+
+        if "caps lock:   on" not in output and "caps lock: on" not in output:
+            return
+
+        try:
+            subprocess.run(
+                ["xdotool", "key", "Caps_Lock"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=1.5,
+                check=False,
+            )
+            logger.debug("System Caps Lock state toggled off via xdotool")
+        except Exception as error:
+            logger.debug("Could not toggle system Caps Lock off: %s", error)
 
     def _send_all_notes_off(self) -> None:
         """Send Note Off for all tracked active notes."""
@@ -576,6 +616,7 @@ class InputListener:
         self._running = False
 
         self._set_caps_lock_led(False)
+        self._force_system_caps_lock_off()
         
         # Ungrab device if grabbed
         if self._is_grabbed:
