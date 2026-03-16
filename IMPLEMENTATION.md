@@ -108,3 +108,29 @@
 - [x] **Step 7.3:** Force passthrough fallback when capture sync fails.
   - **Verify:** Failed capture-mode sync no longer leaves UI in a false-capturing state.
   - **Note:** Updated `src/tui.py::set_capture_mode` to detect failed sync and revert to passthrough with warnings.
+
+### Phase 8: Mapping Form Unification and Key Auto-Detect
+- [x] **Step 8.1:** Introduce shared mapping dialog components for key mappings with conflict confirmation and summary messaging.
+  - **Verify:** All keybind CRUD flows invoke shared dialog components and no longer require separate key-entry prompts.
+  - **Note:** Added `src/screens/mapping_dialogs.py` with `KeyMappingDialog`, `ConfirmOverwriteDialog`, `normalize_key_name`, and conversion helpers.
+
+- [x] **Step 8.2:** Unify preset page mappings, preset global mappings, and preset global actions onto shared add/edit flows.
+  - **Verify:** Add/edit actions for all three scopes use the same dialog UX and preserve schema-safe outputs.
+  - **Note:** Updated `src/screens/preset_editor.py` to route all mapping CRUD flows through shared dialog payload handlers and overwrite confirmation.
+
+- [x] **Step 8.3:** Unify app-global keybind add/edit forms with shared mapping dialog and conflict guard.
+  - **Verify:** Settings keybind add/edit supports key auto-detect, editable keys, and overwrite confirmation.
+  - **Note:** Updated `src/screens/settings_screen.py` handlers to use shared dialog payload logic and conflict confirmation with existing mapping details.
+
+- [x] **Step 8.4:** Standardize mapping table presentation for unified flows.
+  - **Verify:** Mapping tables present consistent row model and update correctly after CRUD actions.
+  - **Note:** Standardized tables to `Key / Type / Value / Name` across preset global actions and app-global keybinds.
+
+### Phase 9: Documentation and Validation
+- [x] **Step 9.1:** Add regression checks for expanded key normalization and Textual key-detect conversion helpers.
+  - **Verify:** `pytest tests/ -v` includes coverage for `BTN_*`, explicit evdev symbols, and textual-to-evdev conversion.
+  - **Note:** Extended `tests/test_phase6_regression.py` with new helper coverage.
+
+- [x] **Step 9.2:** Document accepted key formats and key-detection behavior for users.
+  - **Verify:** README contains feature docs for key detection, accepted formats, and overwrite safety.
+  - **Note:** Updated `README.md` with a dedicated key input/detection section.

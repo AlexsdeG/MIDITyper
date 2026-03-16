@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-03-16
+
+### Added
+- Unified key mapping dialog flow across preset page mappings, preset global mappings/actions, and app-global keybinds.
+- "Detect Pressed Key" support in mapping forms to auto-fill evdev key codes from next key press.
+- Conflict confirmation dialog for duplicate key assignments, showing the existing mapping summary before overwrite.
+- Regression tests for expanded key normalization and Textual key-detection conversion.
+
+### Changed
+- Expanded key normalization to accept valid evdev symbols (including `KEY_*`, `BTN_*`, and other explicit valid symbols).
+- Standardized mapping tables in editor/settings flows to a shared `Key / Type / Value / Name` structure.
+- Updated README documentation with key code formats, detection workflow, and overwrite behavior.
+
 ## [0.1.0] - 2025-03-08
 
 ### Added

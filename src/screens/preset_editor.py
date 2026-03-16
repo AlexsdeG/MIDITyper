@@ -30,6 +30,12 @@ from textual.message import Message
 from textual.binding import Binding
 
 from ..action_catalog import get_action_select_options
+from .mapping_dialogs import (
+    ConfirmOverwriteDialog,
+    KeyMappingDialog,
+    mapping_summary,
+    normalize_key_name as shared_normalize_key_name,
+)
 
 
 def normalize_key_name(key_input: str) -> Optional[str]:
@@ -49,34 +55,7 @@ def normalize_key_name(key_input: str) -> Optional[str]:
     Returns:
         Normalized key name if valid, None if invalid
     """
-    if not key_input:
-        return None
-    
-    # Strip whitespace and convert to uppercase
-    key_input = key_input.strip().upper()
-    
-    # If already has KEY_ prefix, validate it exists in ecodes
-    if key_input.startswith('KEY_'):
-        # Check if it exists in ecodes.KEY
-        for name in dir(ecodes):
-            if name == key_input:
-                return key_input
-        return None
-    
-    # Add KEY_ prefix and validate
-    normalized = f'KEY_{key_input}'
-    for name in dir(ecodes):
-        if name == normalized:
-            return normalized
-    
-    # Check if it's a button code (BTN_)
-    if key_input.startswith('BTN_'):
-        for name in dir(ecodes):
-            if name == key_input:
-                return key_input
-        return None
-    
-    return None
+    return shared_normalize_key_name(key_input)
 
 
 # Available UI modules
@@ -630,7 +609,7 @@ class PresetEditorScreen(Screen):
         
         # Initialize global actions table
         global_actions_table = self.query_one("#global-actions-table", DataTable)
-        global_actions_table.add_columns("Key", "Action")
+        global_actions_table.add_columns("Key", "Type", "Value", "Name")
         
         # Set default module checkboxes
         self._update_module_checkboxes(self._selected_modules)
@@ -872,7 +851,12 @@ class PresetEditorScreen(Screen):
         
         for key, mapping in global_actions.items():
             self._global_action_keys.append(key)
-            global_table.add_row(key, mapping.get("action", ""))
+            global_table.add_row(
+                key,
+                "Action",
+                mapping.get("action", ""),
+                "-",
+            )
 
     def _get_selected_table_key(self, table: DataTable, keys: List[str]) -> Optional[str]:
         """Get selected key from a table based on cursor row."""
@@ -992,15 +976,13 @@ class PresetEditorScreen(Screen):
             self.notify("Invalid page selection", severity="error")
             return
         
-        # Open dialog with default values
         self.app.push_screen(
-            MappingEditDialog(
-                key_name="KEY_A",
-                mapping_type="note",
-                note=60,
-                note_name="C4"
+            KeyMappingDialog(
+                title="Add Page Mapping",
+                initial_key="KEY_A",
+                initial_mapping={"type": "note", "note": 60, "name": "C4"},
             ),
-            self._handle_mapping_result
+            lambda payload: self._apply_mapping_payload(payload, "page"),
         )
     
     def _edit_mapping(self) -> None:
@@ -1021,16 +1003,14 @@ class PresetEditorScreen(Screen):
         
         mapping = mappings[row_key]
         
-        # Open dialog with current values
         self.app.push_screen(
-            MappingEditDialog(
-                key_name=row_key,
-                mapping_type=mapping.get("type", "note"),
-                note=mapping.get("note", 60),
-                note_name=mapping.get("name", "C4"),
-                action=mapping.get("action", "TOGGLE_CAPTURE")
+            KeyMappingDialog(
+                title="Edit Page Mapping",
+                edit_mode=True,
+                initial_key=row_key,
+                initial_mapping=mapping,
             ),
-            lambda result, k=row_key: self._handle_edit_result(k, result, "page")
+            lambda payload: self._apply_mapping_payload(payload, "page"),
         )
     
     def _delete_mapping(self) -> None:
@@ -1051,103 +1031,96 @@ class PresetEditorScreen(Screen):
             self._refresh_mapping_table()
             self.notify(f"Deleted mapping for {row_key}", severity="information")
     
-    def _handle_mapping_result(self, result: Optional[Dict]) -> None:
-        """Handle the result from the mapping dialog for new mappings."""
-        if result is None or result is False:
+    def _apply_mapping_payload(self, payload: Optional[Dict], target: str) -> None:
+        """Apply a mapping dialog payload to the selected target collection."""
+        if not payload:
             return
-        
-        # Need to ask for the key name
-        self._pending_mapping = result
-        self._pending_mapping_target = "page"
-        self.app.push_screen(
-            InputScreen("Enter key code (e.g., KEY_A, KEY_SPACE):", "KEY_A"),
-            self._handle_key_input
-        )
-    
-    def _handle_key_input(self, key_name: Optional[str]) -> None:
-        """Handle key input for new mapping."""
-        if not key_name:
+
+        original_key = payload.get("original_key", "")
+        new_key = payload.get("key", "")
+        mapping = payload.get("mapping", {})
+
+        mapping_store = self._resolve_mapping_store(target)
+        if mapping_store is None:
             return
-        
-        # Normalize key name to evdev format (KEY_A, etc.)
-        normalized_key = normalize_key_name(key_name)
-        if not normalized_key:
-            self.notify(
-                f"Invalid key name: '{key_name}'. Use format like 'A', 'SPACE', or 'KEY_A'",
-                severity="error"
+
+        existing = mapping_store.get(new_key)
+        if existing is not None and new_key != original_key:
+            warning = (
+                f"{new_key} is already mapped to {mapping_summary(existing)}.\n"
+                f"Replace it with {mapping_summary(mapping)}?"
+            )
+            self.app.push_screen(
+                ConfirmOverwriteDialog("Key Conflict", warning),
+                lambda confirmed, p=payload, t=target: self._finalize_mapping_payload(
+                    p,
+                    t,
+                    bool(confirmed),
+                ),
             )
             return
-        
-        result = getattr(self, '_pending_mapping', None)
-        target = getattr(self, '_pending_mapping_target', 'page')
-        
-        if not result:
+
+        self._finalize_mapping_payload(payload, target, True)
+
+    def _finalize_mapping_payload(self, payload: Dict, target: str, confirmed: bool) -> None:
+        """Finalize mapping update after conflict confirmation."""
+        if not confirmed:
+            self.notify("Mapping update cancelled", severity="warning")
             return
-        
+
+        original_key = payload.get("original_key", "")
+        new_key = payload.get("key", "")
+        mapping = payload.get("mapping", {})
+
+        mapping_store = self._resolve_mapping_store(target)
+        if mapping_store is None:
+            return
+
+        if original_key and original_key != new_key and original_key in mapping_store:
+            del mapping_store[original_key]
+
+        existed_before = new_key in mapping_store
+        mapping_store[new_key] = mapping
+        self._refresh_target_table(target)
+
+        verb = "Updated" if payload.get("edit_mode") or existed_before else "Added"
+        self.notify(f"{verb} mapping for {new_key}", severity="information")
+
+    def _resolve_mapping_store(self, target: str) -> Optional[Dict[str, Dict]]:
+        """Resolve a mapping store by target scope."""
         if target == "page":
             pages = self._preset_data.get("pages", [])
             if self.selected_page_index >= len(pages):
-                return
-            
-            mappings = pages[self.selected_page_index].setdefault("mappings", {})
-            mappings[normalized_key] = result
+                return None
+            return pages[self.selected_page_index].setdefault("mappings", {})
+
+        if target == "global":
+            return self._preset_data.setdefault("global_mappings", {})
+
+        if target == "global_action":
+            return self._preset_data.setdefault("global_actions", {})
+
+        return None
+
+    def _refresh_target_table(self, target: str) -> None:
+        """Refresh table for a target scope."""
+        if target == "page":
             self._refresh_mapping_table()
         elif target == "global":
-            global_mappings = self._preset_data.setdefault("global_mappings", {})
-            global_mappings[normalized_key] = result
             self._refresh_global_mappings_table()
-        
-        self.notify(f"Added mapping for {normalized_key}", severity="information")
-    
-    def _handle_edit_result(self, key_name: str, result: Optional[Dict], target: str) -> None:
-        """Handle the result from the mapping dialog for editing."""
-        if result is False:
-            return
-        
-        if target == "page":
-            pages = self._preset_data.get("pages", [])
-            if self.selected_page_index >= len(pages):
-                return
-            
-            mappings = pages[self.selected_page_index].get("mappings", {})
-            
-            if result is None:
-                # Delete the mapping
-                if key_name in mappings:
-                    del mappings[key_name]
-                    self._refresh_mapping_table()
-                    self.notify(f"Deleted mapping for {key_name}", severity="information")
-            else:
-                # Update the mapping
-                mappings[key_name] = result
-                self._refresh_mapping_table()
-                self.notify(f"Updated mapping for {key_name}", severity="information")
-        
-        elif target == "global":
-            global_mappings = self._preset_data.get("global_mappings", {})
-            
-            if result is None:
-                if key_name in global_mappings:
-                    del global_mappings[key_name]
-                    self._refresh_global_mappings_table()
-                    self.notify(f"Deleted global mapping for {key_name}", severity="information")
-            else:
-                global_mappings[key_name] = result
-                self._refresh_global_mappings_table()
-                self.notify(f"Updated global mapping for {key_name}", severity="information")
+        elif target == "global_action":
+            self._refresh_global_actions_table()
     
     # Global Mappings CRUD
     def _add_global_mapping(self) -> None:
         """Add a new global mapping."""
-        self._pending_mapping_target = "global"
         self.app.push_screen(
-            MappingEditDialog(
-                key_name="KEY_F1",
-                mapping_type="note",
-                note=60,
-                note_name="C4"
+            KeyMappingDialog(
+                title="Add Preset Global Mapping",
+                initial_key="KEY_F1",
+                initial_mapping={"type": "note", "note": 60, "name": "C4"},
             ),
-            self._handle_mapping_result
+            lambda payload: self._apply_mapping_payload(payload, "global"),
         )
     
     def _edit_global_mapping(self) -> None:
@@ -1165,14 +1138,13 @@ class PresetEditorScreen(Screen):
         mapping = global_mappings[row_key]
         
         self.app.push_screen(
-            MappingEditDialog(
-                key_name=row_key,
-                mapping_type=mapping.get("type", "note"),
-                note=mapping.get("note", 60),
-                note_name=mapping.get("name", "C4"),
-                action=mapping.get("action", "TOGGLE_CAPTURE")
+            KeyMappingDialog(
+                title="Edit Preset Global Mapping",
+                edit_mode=True,
+                initial_key=row_key,
+                initial_mapping=mapping,
             ),
-            lambda result, k=row_key: self._handle_edit_result(k, result, "global")
+            lambda payload: self._apply_mapping_payload(payload, "global"),
         )
     
     def _delete_global_mapping(self) -> None:
@@ -1192,46 +1164,15 @@ class PresetEditorScreen(Screen):
     # Global Actions CRUD
     def _add_global_action(self) -> None:
         """Add a global action."""
-        self._pending_global = True
         self.app.push_screen(
-            InputScreen("Enter key code (e.g., KEY_F12, KEY_ESC):", "KEY_F12"),
-            self._handle_global_key_input
-        )
-    
-    def _handle_global_key_input(self, key_name: Optional[str]) -> None:
-        """Handle key input for global action."""
-        if not key_name:
-            return
-        
-        # Open dialog for action selection
-        self.app.push_screen(
-            MappingEditDialog(
-                key_name=key_name,
-                mapping_type="action",
-                action="TOGGLE_CAPTURE"
+            KeyMappingDialog(
+                title="Add Preset Global Action",
+                initial_key="KEY_F12",
+                initial_mapping={"type": "action", "action": "TOGGLE_CAPTURE"},
+                action_only=True,
             ),
-            lambda result, k=key_name: self._handle_global_action_result(k, result)
+            lambda payload: self._apply_mapping_payload(payload, "global_action"),
         )
-    
-    def _handle_global_action_result(self, key_name: str, result: Optional[Dict]) -> None:
-        """Handle the result from the global action dialog."""
-        if result is False:
-            return
-
-        global_actions = self._preset_data.setdefault("global_actions", {})
-        if result is None:
-            if key_name in global_actions:
-                del global_actions[key_name]
-                self._refresh_global_actions_table()
-                self.notify(f"Deleted global action for {key_name}", severity="information")
-            return
-
-        is_update = key_name in global_actions
-        global_actions[key_name] = result
-
-        self._refresh_global_actions_table()
-        verb = "Updated" if is_update else "Added"
-        self.notify(f"{verb} global action for {key_name}", severity="information")
     
     def _delete_global_action(self) -> None:
         """Delete the selected global action."""
@@ -1261,12 +1202,14 @@ class PresetEditorScreen(Screen):
             return
 
         self.app.push_screen(
-            MappingEditDialog(
-                key_name=row_key,
-                mapping_type="action",
-                action=mapping.get("action", "TOGGLE_CAPTURE")
+            KeyMappingDialog(
+                title="Edit Preset Global Action",
+                edit_mode=True,
+                initial_key=row_key,
+                initial_mapping=mapping,
+                action_only=True,
             ),
-            lambda result, k=row_key: self._handle_global_action_result(k, result)
+            lambda payload: self._apply_mapping_payload(payload, "global_action"),
         )
     
     def action_save(self) -> None:

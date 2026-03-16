@@ -1,6 +1,6 @@
 # MIDITyper
 
-**Version 0.1.0**
+**Version 0.2.0**
 
 A highly efficient, background-capable Linux CLI/TUI application that intercepts physical keyboard inputs via `evdev`, translates them into MIDI messages, and sends them to a virtual MIDI port.
 
@@ -15,6 +15,8 @@ A highly efficient, background-capable Linux CLI/TUI application that intercepts
 - **Seamless passthrough** - Toggle between MIDI and normal keyboard mode
 - **Multiple presets** - Piano, drums, and chromatic layouts included
 - **Pydantic validation** - Type-safe JSON configuration
+- **Unified key mapping forms** - Same add/edit UX across page, preset-global, and app-global mappings
+- **Detect Pressed Key** - Capture next key press directly into mapping key field
 
 ## Requirements
 
@@ -92,6 +94,29 @@ PYTHONPATH=. python -m src.main info
 | `F10` | Octave down |
 | `ESC` | Panic (all notes off) |
 | `+` / `-` | Velocity up/down |
+
+### Key Code Input and Detection
+
+When creating or editing mappings in Settings or Preset Editor, you can use either
+manual key-code entry or the **Detect Pressed Key** button.
+
+- **Auto-detect flow:** Click **Detect Pressed Key**, press one key, and MIDITyper
+  writes the normalized evdev code to the key field.
+- **Editable in add/edit:** Key code stays editable in both create and edit forms.
+- **Conflict safety:** If the key already exists in the same table, MIDITyper shows a
+  warning with the existing mapping and asks for overwrite confirmation.
+
+Accepted key code formats:
+
+- **Keyboard keys:** `KEY_A`, `KEY_ESC`, `KEY_F12`, `KEY_SPACE`
+- **Button keys:** `BTN_SOUTH`, `BTN_TRIGGER`, `BTN_LEFT`
+- **Other valid evdev symbols (advanced):** full symbol names like `ABS_X`
+
+Short aliases are normalized where possible:
+
+- `A` -> `KEY_A`
+- `space` -> `KEY_SPACE`
+- `f12` -> `KEY_F12`
 
 ## Included Presets
 

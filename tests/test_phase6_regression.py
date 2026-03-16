@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from src.config_parser import ActionMapping, NoteMapping, Page, Preset
 from src.input_listener import InputListener
 from src.screens.capture_screen import CaptureScreen
+from src.screens.mapping_dialogs import textual_key_to_evdev
 from src.screens.preset_editor import normalize_key_name
 from src.state_manager import StateManager
 from src.tui import KeyboardMidiApp
@@ -108,7 +109,17 @@ def test_normalize_key_name_accepts_editor_input_variants() -> None:
     assert normalize_key_name("KEY_A") == "KEY_A"
     assert normalize_key_name("space") == "KEY_SPACE"
     assert normalize_key_name(" key_enter ") == "KEY_ENTER"
+    assert normalize_key_name("BTN_SOUTH") == "BTN_SOUTH"
+    assert normalize_key_name("ABS_X") == "ABS_X"
     assert normalize_key_name("not_a_real_key") is None
+
+
+def test_textual_key_conversion_supports_detection_flow() -> None:
+    """Key-detect conversion should translate Textual keys to evdev names."""
+    assert textual_key_to_evdev("escape") == "KEY_ESC"
+    assert textual_key_to_evdev("a") == "KEY_A"
+    assert textual_key_to_evdev("f12") == "KEY_F12"
+    assert textual_key_to_evdev("ctrl+a") == "KEY_A"
 
 
 def test_passthrough_ignores_note_mappings_but_allows_toggle_capture() -> None:

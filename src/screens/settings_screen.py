@@ -23,6 +23,7 @@ from textual.binding import Binding
 
 from ..action_catalog import get_action_select_options
 from ..input_listener import list_input_devices
+from .mapping_dialogs import ConfirmOverwriteDialog, KeyMappingDialog, mapping_summary
 
 
 class AddGlobalMappingDialog(ModalScreen):
@@ -386,16 +387,20 @@ class SettingsScreen(Screen):
             mappings = self.app.config.settings.app_global_mappings
             for key, mapping in mappings.items():
                 if mapping.get('type') == 'note':
-                    value = f"Note {mapping.get('note', 0)} ({mapping.get('name', '?')})"
+                    value = str(mapping.get('note', 0))
+                    name = mapping.get('name', '?')
+                    mapping_type = 'note'
                 else:
                     value = mapping.get('action', '?')
+                    name = '-'
+                    mapping_type = 'action'
                 self._global_key_rows.append(key)
-                table.add_row(key, mapping.get('type', '?'), value)
+                table.add_row(key, mapping_type, value, name)
     
     def on_mount(self) -> None:
         """Initialize the screen with current settings."""
         table = self.query_one("#global-keybinds-table", DataTable)
-        table.add_columns("Key", "Type", "Value")
+        table.add_columns("Key", "Type", "Value", "Name")
         
         # Load settings from app if available
         if hasattr(self.app, 'config') and self.app.config:
@@ -512,7 +517,14 @@ class SettingsScreen(Screen):
     
     def _add_global_keybind(self) -> None:
         """Add a new global keybind."""
-        self.app.push_screen(AddGlobalMappingDialog(), self._handle_add_global_result)
+        self.app.push_screen(
+            KeyMappingDialog(
+                title="Add App-Global Keybind",
+                initial_key="KEY_F12",
+                initial_mapping={"type": "action", "action": "TOGGLE_CAPTURE"},
+            ),
+            self._handle_add_global_result,
+        )
 
     def _edit_global_keybind(self) -> None:
         """Edit the selected global keybind."""
@@ -527,33 +539,78 @@ class SettingsScreen(Screen):
             return
 
         self.app.push_screen(
-            AddGlobalMappingDialog(edit_mode=True, initial_key=key, initial_mapping=mapping),
+            KeyMappingDialog(
+                title="Edit App-Global Keybind",
+                edit_mode=True,
+                initial_key=key,
+                initial_mapping=mapping,
+            ),
             self._handle_edit_global_result,
         )
 
-    def _handle_add_global_result(self, result: Optional[tuple]) -> None:
+    def _handle_add_global_result(self, result: Optional[Dict]) -> None:
         """Handle the result from the add global mapping dialog."""
         if result is None:
             return
 
-        key, mapping = result
+        self._apply_global_payload(result)
 
-        if hasattr(self.app, 'config') and self.app.config:
-            self.app.config.settings.app_global_mappings[key] = mapping
-            self._refresh_global_keybinds_table()
-            self.notify(f"Added global keybind: {key}", severity="information")
-
-    def _handle_edit_global_result(self, result: Optional[tuple]) -> None:
+    def _handle_edit_global_result(self, result: Optional[Dict]) -> None:
         """Handle the result from the edit global mapping dialog."""
         if result is None:
             return
 
-        key, mapping = result
+        self._apply_global_payload(result)
 
-        if hasattr(self.app, 'config') and self.app.config:
-            self.app.config.settings.app_global_mappings[key] = mapping
-            self._refresh_global_keybinds_table()
-            self.notify(f"Updated global keybind: {key}", severity="information")
+    def _apply_global_payload(self, payload: Dict) -> None:
+        """Apply a mapping payload to app-global mappings with conflict guard."""
+        if not hasattr(self.app, 'config') or not self.app.config:
+            return
+
+        mappings = self.app.config.settings.app_global_mappings
+        original_key = payload.get("original_key", "")
+        key = payload.get("key", "")
+        mapping = payload.get("mapping", {})
+
+        existing = mappings.get(key)
+        if existing is not None and key != original_key:
+            warning = (
+                f"{key} is already mapped to {mapping_summary(existing)}.\n"
+                f"Replace it with {mapping_summary(mapping)}?"
+            )
+            self.app.push_screen(
+                ConfirmOverwriteDialog("Key Conflict", warning),
+                lambda confirmed, p=payload: self._finalize_global_payload(
+                    p,
+                    bool(confirmed),
+                ),
+            )
+            return
+
+        self._finalize_global_payload(payload, True)
+
+    def _finalize_global_payload(self, payload: Dict, confirmed: bool) -> None:
+        """Finalize app-global payload application after confirmation."""
+        if not confirmed:
+            self.notify("Global keybind update cancelled", severity="warning")
+            return
+
+        if not hasattr(self.app, 'config') or not self.app.config:
+            return
+
+        mappings = self.app.config.settings.app_global_mappings
+        original_key = payload.get("original_key", "")
+        key = payload.get("key", "")
+        mapping = payload.get("mapping", {})
+
+        if original_key and original_key != key and original_key in mappings:
+            del mappings[original_key]
+
+        existed_before = key in mappings
+        mappings[key] = mapping
+        self._refresh_global_keybinds_table()
+        verb = "Updated" if payload.get("edit_mode") or existed_before else "Added"
+        self.notify(f"{verb} global keybind: {key}", severity="information")
 
     def _delete_global_keybind(self) -> None:
         """Delete the selected global keybind."""
