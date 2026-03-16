@@ -51,6 +51,41 @@ _TEXTUAL_KEY_ALIASES: dict[str, str] = {
     "left_square_bracket": "KEY_LEFTBRACE",
     "right_square_bracket": "KEY_RIGHTBRACE",
     "backslash": "KEY_BACKSLASH",
+    "adiaeresis": "KEY_APOSTROPHE",
+    "odiaeresis": "KEY_SEMICOLON",
+    "udiaeresis": "KEY_LEFTBRACE",
+    "ssharp": "KEY_MINUS",
+    "dead_acute": "KEY_EQUAL",
+    "dead_circumflex": "KEY_GRAVE",
+}
+
+_SPECIAL_INPUT_ALIASES: dict[str, str] = {
+    "number_sign": "KEY_BACKSLASH",
+    "#": "KEY_BACKSLASH",
+    "ö": "KEY_SEMICOLON",
+    "o_umlaut": "KEY_SEMICOLON",
+    "ä": "KEY_APOSTROPHE",
+    "a_umlaut": "KEY_APOSTROPHE",
+    "ü": "KEY_LEFTBRACE",
+    "u_umlaut": "KEY_LEFTBRACE",
+    "plus": "KEY_RIGHTBRACE",
+    "+": "KEY_RIGHTBRACE",
+    "less_than_sign": "KEY_102ND",
+    "less_than": "KEY_102ND",
+    "<": "KEY_102ND",
+    "full_stop": "KEY_DOT",
+    ".": "KEY_DOT",
+    "caps_lock": "KEY_CAPSLOCK",
+    "caps lock": "KEY_CAPSLOCK",
+    "ß": "KEY_MINUS",
+    "eszett": "KEY_MINUS",
+    "sharp_s": "KEY_MINUS",
+    "acute_accent": "KEY_EQUAL",
+    "accute_accent": "KEY_EQUAL",
+    "´": "KEY_EQUAL",
+    "circumflex_accent": "KEY_GRAVE",
+    "cirmcumfex_accent": "KEY_GRAVE",
+    "^": "KEY_GRAVE",
 }
 
 
@@ -69,7 +104,17 @@ def normalize_key_name(key_input: str) -> Optional[str]:
     if not key_input:
         return None
 
-    candidate = key_input.strip().upper()
+    raw_candidate = key_input.strip()
+    lowered_candidate = raw_candidate.lower()
+    normalized_alias = lowered_candidate.replace("-", "_")
+
+    alias_target = _SPECIAL_INPUT_ALIASES.get(lowered_candidate)
+    if alias_target is None:
+        alias_target = _SPECIAL_INPUT_ALIASES.get(normalized_alias)
+    if alias_target is not None and alias_target in _VALID_ECODES:
+        return alias_target
+
+    candidate = raw_candidate.upper()
     if not candidate:
         return None
 
@@ -121,7 +166,8 @@ def textual_key_to_evdev(key: str) -> Optional[str]:
         return None
 
     lowered = key.lower().strip()
-    lowered = lowered.split("+")[-1]
+    if "+" in lowered and len(lowered) > 1 and lowered != "plus":
+        lowered = lowered.split("+")[-1]
 
     if lowered in _TEXTUAL_KEY_ALIASES:
         return _TEXTUAL_KEY_ALIASES[lowered]
@@ -130,7 +176,7 @@ def textual_key_to_evdev(key: str) -> Optional[str]:
     if function_match:
         return normalize_key_name(f"KEY_F{function_match.group(1)}")
 
-    if len(lowered) == 1 and lowered.isalnum():
+    if len(lowered) == 1 and lowered.isascii() and lowered.isalnum():
         return normalize_key_name(f"KEY_{lowered.upper()}")
 
     return normalize_key_name(lowered)

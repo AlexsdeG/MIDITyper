@@ -118,6 +118,20 @@ Short aliases are normalized where possible:
 - `space` -> `KEY_SPACE`
 - `f12` -> `KEY_F12`
 
+Additional special aliases are supported (layout-oriented shortcuts):
+
+- `number_sign` -> `KEY_BACKSLASH`
+- `ö` -> `KEY_SEMICOLON`
+- `ä` -> `KEY_APOSTROPHE`
+- `ü` -> `KEY_LEFTBRACE`
+- `plus` -> `KEY_RIGHTBRACE`
+- `less_than_sign` -> `KEY_102ND`
+- `full_stop` -> `KEY_DOT`
+- `caps lock` -> `KEY_CAPSLOCK`
+- `ß` -> `KEY_MINUS`
+- `accute_accent` -> `KEY_EQUAL`
+- `cirmcumfex_accent` -> `KEY_GRAVE`
+
 ## Included Presets
 
 ### piano_qwertz

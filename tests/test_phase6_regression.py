@@ -111,6 +111,17 @@ def test_normalize_key_name_accepts_editor_input_variants() -> None:
     assert normalize_key_name(" key_enter ") == "KEY_ENTER"
     assert normalize_key_name("BTN_SOUTH") == "BTN_SOUTH"
     assert normalize_key_name("ABS_X") == "ABS_X"
+    assert normalize_key_name("number_sign") == "KEY_BACKSLASH"
+    assert normalize_key_name("ö") == "KEY_SEMICOLON"
+    assert normalize_key_name("ä") == "KEY_APOSTROPHE"
+    assert normalize_key_name("ü") == "KEY_LEFTBRACE"
+    assert normalize_key_name("plus") == "KEY_RIGHTBRACE"
+    assert normalize_key_name("less_than_sign") == "KEY_102ND"
+    assert normalize_key_name("full_stop") == "KEY_DOT"
+    assert normalize_key_name("caps lock") == "KEY_CAPSLOCK"
+    assert normalize_key_name("ß") == "KEY_MINUS"
+    assert normalize_key_name("accute_accent") == "KEY_EQUAL"
+    assert normalize_key_name("cirmcumfex_accent") == "KEY_GRAVE"
     assert normalize_key_name("not_a_real_key") is None
 
 
@@ -120,6 +131,15 @@ def test_textual_key_conversion_supports_detection_flow() -> None:
     assert textual_key_to_evdev("a") == "KEY_A"
     assert textual_key_to_evdev("f12") == "KEY_F12"
     assert textual_key_to_evdev("ctrl+a") == "KEY_A"
+    assert textual_key_to_evdev("ö") == "KEY_SEMICOLON"
+    assert textual_key_to_evdev("ä") == "KEY_APOSTROPHE"
+    assert textual_key_to_evdev("ü") == "KEY_LEFTBRACE"
+    assert textual_key_to_evdev("ß") == "KEY_MINUS"
+    assert textual_key_to_evdev("odiaeresis") == "KEY_SEMICOLON"
+    assert textual_key_to_evdev("adiaeresis") == "KEY_APOSTROPHE"
+    assert textual_key_to_evdev("udiaeresis") == "KEY_LEFTBRACE"
+    assert textual_key_to_evdev("ssharp") == "KEY_MINUS"
+    assert textual_key_to_evdev("+") == "KEY_RIGHTBRACE"
 
 
 def test_passthrough_ignores_note_mappings_but_allows_toggle_capture() -> None:
